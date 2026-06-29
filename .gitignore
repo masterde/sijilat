@@ -23,3 +23,5 @@ workflow-verify-report.json
 .printing-press-patches/
 .printing-press-pii-polish.json
 .printing-press-tools-polish.json
+.vercel
+.env*.local

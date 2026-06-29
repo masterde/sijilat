@@ -166,3 +166,8 @@ function clampInt(v: string | undefined, def: number, min: number, max: number):
   if (Number.isNaN(n)) return def;
   return Math.min(max, Math.max(min, n));
 }
+
+// Default export so Vercel's zero-config Hono preset can use this module as the
+// serverless function entry (it wraps the app's fetch handler). The named
+// export above is what src/server.ts uses for the long-lived Node server.
+export default app;

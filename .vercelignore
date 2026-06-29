@@ -1,0 +1,8 @@
+# Vercel deploys only server/ (project Root Directory = server); skip the Go CLI.
+/internal
+/cmd
+/build
+*.go
+sijilat-pp-cli
+.manuscripts
+.git
