@@ -4,8 +4,17 @@
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
+import { timingSafeEqual } from "node:crypto";
 import { SijilatClient, SijilatError, RateLimitError, type SearchFilters } from "./sijilat.js";
 import { parseDetail } from "./detail.js";
+
+/** Constant-time string compare that doesn't leak length-mismatch timing. */
+function secretEqual(a: string, b: string): boolean {
+  const ab = Buffer.from(a);
+  const bb = Buffer.from(b);
+  if (ab.length !== bb.length) return false;
+  return timingSafeEqual(ab, bb);
+}
 
 // One client per process so the bearer token + lookup tables are cached across
 // requests (and across warm serverless invocations).
@@ -17,14 +26,16 @@ app.use("*", logger());
 app.use("*", cors());
 
 // Optional API key: when SIJILAT_API_KEY is set, require a matching x-api-key
-// (or `?api_key=`). When unset, the API is open (fine for local/private use).
+// HEADER. When unset, the API is open (fine for local/private use). The key is
+// only accepted as a header — never a query parameter — so it does not leak
+// into access logs, the request URL, or referrers.
 app.use("*", async (c, next) => {
   const required = process.env.SIJILAT_API_KEY;
   if (!required) return next();
   if (c.req.path === "/" || c.req.path === "/health") return next();
-  const provided = c.req.header("x-api-key") ?? c.req.query("api_key");
-  if (provided !== required) {
-    return c.json({ error: "unauthorized", message: "missing or invalid x-api-key" }, 401);
+  const provided = c.req.header("x-api-key") ?? "";
+  if (!secretEqual(provided, required)) {
+    return c.json({ error: "unauthorized", message: "missing or invalid x-api-key header" }, 401);
   }
   return next();
 });

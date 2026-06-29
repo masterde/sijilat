@@ -54,8 +54,10 @@ npm run dev          # http://localhost:3000 (auto-reload)
 
 ## Auth (optional)
 
-Set `SIJILAT_API_KEY` to require an `x-api-key` header (or `?api_key=`) on all
-endpoints except `/` and `/health`. Leave it unset to run open. See `.env.example`.
+Set `SIJILAT_API_KEY` to require an `x-api-key` **header** on all endpoints
+except `/` and `/health` (the key is header-only — never a query parameter — so
+it can't leak into logs or URLs; comparison is constant-time). Leave it unset to
+run open. See `.env.example`.
 
 ```bash
 SIJILAT_API_KEY=$(openssl rand -hex 24) npm start
