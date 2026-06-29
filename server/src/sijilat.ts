@@ -2,9 +2,14 @@
 // lookup tables, and name->code filter resolution. Ported from the Go CLI.
 
 import { encryptBody, tokenPassword, TOKEN_USERNAME } from "./crypto.js";
+import { RateLimiter } from "./ratelimit.js";
+import { resolveActivityNames } from "./activities.js";
 
 const DEFAULT_BASE_URL = "https://api.sijilat.bh/api/";
 const USER_AGENT = "sijilat-api (+https://github.com/mvanhorn/printing-press-library)";
+// Per-request upstream timeout — global fetch has no default, so a stalled
+// registry connection would otherwise hang the request forever.
+const REQUEST_TIMEOUT_MS = 25_000;
 
 export interface SearchFilters {
   nameEn?: string;
@@ -82,6 +87,7 @@ export class SijilatClient {
   private tokenExpiry = 0;
   private lookupsCache: LookupTables | null = null;
   private inflightToken: Promise<string> | null = null;
+  private readonly limiter = new RateLimiter(6);
 
   constructor(baseUrl = process.env.SIJILAT_BASE_URL || DEFAULT_BASE_URL) {
     if (!baseUrl.endsWith("/")) baseUrl += "/";
@@ -100,6 +106,7 @@ export class SijilatClient {
         password: tokenPassword(),
         grant_type: "password",
       });
+      await this.limiter.acquire();
       const resp = await fetch(this.tokenUrl, {
         method: "POST",
         headers: {
@@ -107,9 +114,14 @@ export class SijilatClient {
           "user-agent": USER_AGENT,
         },
         body,
+        signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
       });
-      if (resp.status === 429) throw new RateLimitError(this.tokenUrl);
+      if (resp.status === 429) {
+        this.limiter.onRateLimit();
+        throw new RateLimitError(this.tokenUrl);
+      }
       if (!resp.ok) throw new SijilatError(`token endpoint returned HTTP ${resp.status}`, resp.status);
+      this.limiter.onSuccess();
       const data = (await resp.json()) as { access_token?: string; expires_in?: number };
       if (!data.access_token) throw new SijilatError("token response missing access_token");
       this.token = data.access_token;
@@ -133,6 +145,7 @@ export class SijilatClient {
       ? "application/encrypted+json; charset=utf-8"
       : "application/json; charset=utf-8";
 
+    await this.limiter.acquire();
     const resp = await fetch(this.baseUrl + path, {
       method: "POST",
       headers: {
@@ -142,9 +155,14 @@ export class SijilatClient {
         "user-agent": USER_AGENT,
       },
       body: payload,
+      signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS),
     });
-    if (resp.status === 429) throw new RateLimitError(this.baseUrl + path);
+    if (resp.status === 429) {
+      this.limiter.onRateLimit();
+      throw new RateLimitError(this.baseUrl + path);
+    }
     if (!resp.ok) throw new SijilatError(`POST ${path} returned HTTP ${resp.status}`, resp.status);
+    this.limiter.onSuccess();
     const env = (await resp.json()) as {
       Status_Code?: string;
       Status_Message?: unknown;
@@ -230,19 +248,23 @@ export class SijilatClient {
     return lt;
   }
 
-  /** Resolves human-readable status/type/nationality/sector/municipality names to codes. */
+  /**
+   * Resolves human-readable filter names to registry codes. Activity names
+   * resolve locally against the bundled ISIC4 table (no network). The
+   * status/type/nationality/sector/municipality tables are fetched (and cached)
+   * only when at least one of those filters is a name rather than a code.
+   */
   private async resolveFilters(f: SearchFilters): Promise<SearchFilters> {
-    const needs = [f.status, f.type, f.nationality, f.sector, f.municipality].some(needsResolve);
-    if (!needs) return f;
+    const out: SearchFilters = { ...f, activity: resolveActivityNames(f.activity) };
+    const needsLookups = [out.status, out.type, out.nationality, out.sector, out.municipality].some(needsResolve);
+    if (!needsLookups) return out;
     const lt = await this.lookups();
-    return {
-      ...f,
-      status: resolveCodes(lt.status, f.status),
-      type: resolveCodes(lt.types, f.type),
-      nationality: resolveCodes(lt.nationalities, f.nationality),
-      sector: resolveCodes(lt.sectors, f.sector),
-      municipality: resolveCodes(lt.municipalities, f.municipality),
-    };
+    out.status = resolveCodes(lt.status, out.status);
+    out.type = resolveCodes(lt.types, out.type);
+    out.nationality = resolveCodes(lt.nationalities, out.nationality);
+    out.sector = resolveCodes(lt.sectors, out.sector);
+    out.municipality = resolveCodes(lt.municipalities, out.municipality);
+    return out;
   }
 }
 

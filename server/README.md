@@ -9,6 +9,8 @@ required (the service mints its own public token).
 Built with [Hono](https://hono.dev) + TypeScript. Runs anywhere: local Node,
 Docker/Fly/Render/Railway, or Vercel.
 
+**Interactive docs:** `GET /docs` (Scalar UI) · **Spec:** `GET /openapi.json` (also `openapi.json` in this folder).
+
 ## Endpoints
 
 | Method & path | Description |
@@ -18,30 +20,53 @@ Docker/Fly/Render/Railway, or Vercel.
 | `GET /search` | Search commercial registrations |
 | `GET /company/:cr` | Full company profile (`?branch=`, `?raw=1`) |
 | `GET /lookups` | All filter code tables |
+| `GET /lookups/activity?q=` | Search business activities (ISIC4) by name |
 | `GET /lookups/:table` | One table: `status\|type\|nationality\|sector\|municipality` |
+| `GET /docs` | Interactive API reference |
+| `GET /openapi.json` | OpenAPI 3.1 spec |
 
 ### `GET /search` query parameters
 
-At least one filter is required.
+At least one filter is required. **All name filters are case-insensitive** and
+accept comma-separated multiple values.
 
-`name_en`, `name_ar`, `cr`, `status`, `type`, `nationality`, `sector`,
-`activity`, `partner`, `partner_ar`, `partner_nat`, `partner_cr`, `reg_from`,
-`reg_to`, `road`, `block`, `building`, `passport` — plus `limit` (default 25),
-`all=1` (page through every match, bounded by `max_scan_pages`, default 20),
-and `lang=ar`.
+**Filters:** `name_en`, `name_ar`, `cr`, `status`, `type`, `nationality`,
+`sector`, `activity`, `municipality`, `partner`, `partner_ar`, `partner_nat`,
+`partner_cr`, `reg_from`, `reg_to`, `road`, `flat`, `block`, `building`,
+`passport`.
 
-`status`, `type`, `nationality`, and `sector` accept **friendly names** (e.g.
-`status=ACTIVE`) which are resolved to the registry's internal codes
-automatically. Use `GET /lookups/status` to see all valid values.
+**Paging & output:** `page` (default 1), `per_page` (default 25, max 200; alias
+`limit`), `all=1` (page through every match, bounded by `max_scan_pages`),
+`fields=` (comma-separated result fields to return), `lang=ar`.
+
+`status`, `type`, `nationality`, `sector`, and `activity` accept **friendly
+names** (e.g. `status=active`, `sector=Manufacturing`, `activity=restaurant`),
+resolved to the registry's internal codes automatically. Discover values with
+`/lookups/status`, `/lookups/sector`, `/lookups/activity?q=...`, etc. Raw codes
+always work too.
+
+> **Note:** the registry upstream cannot combine `sector` with `status` (that
+> pair hangs server-side). When both are supplied, the API runs a fast
+> sector-only query and applies the status filter client-side (bounded by
+> `max_scan_pages`); the response includes `sector_total`, `scanned`, and
+> `has_more` so you can page deeper.
 
 ### Examples
 
 ```bash
-curl 'http://localhost:3000/search?name_en=trading&status=ACTIVE&limit=5'
-curl 'http://localhost:3000/company/106966?branch=1'
-curl 'http://localhost:3000/lookups/status'
+curl 'http://localhost:3000/search?name_en=trading&status=active&per_page=5'
+curl 'http://localhost:3000/search?sector=Manufacturing&status=ACTIVE&fields=cr_number,name_en,status'
+curl 'http://localhost:3000/search?activity=restaurant&per_page=10'
+curl 'http://localhost:3000/lookups/activity?q=warehouse'
+curl 'http://localhost:3000/company/106966?branch=1&raw=1'
 curl 'http://localhost:3000/search?name_ar=%D8%AA%D8%AC%D8%A7%D8%B1%D8%A9&lang=ar'
 ```
+
+### Activity (ISIC4) coverage
+
+`activity=<name>` resolves against a bundled table (`src/data/isic4.json`,
+built by `node scripts/harvest-isic4.mjs`) covering common activities; raw ISIC4
+codes (`activity=521-1`) always work. Re-run the harvester to expand coverage.
 
 ## Run locally
 

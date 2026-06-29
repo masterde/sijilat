@@ -1,0 +1,362 @@
+[
+  {
+    "code": "701-1",
+    "name": "Activities of head offices or Management Offices",
+    "sector": "13"
+  },
+  {
+    "code": "014-1",
+    "name": "Animal production",
+    "sector": "1"
+  },
+  {
+    "code": "433",
+    "name": "Building completion, finishing, and decor",
+    "sector": "6"
+  },
+  {
+    "code": "522901",
+    "name": "Cargo Clearance",
+    "sector": "8"
+  },
+  {
+    "code": "5224-1",
+    "name": "Cargo handling",
+    "sector": "8"
+  },
+  {
+    "code": "16225",
+    "name": "Carpentry Workshop",
+    "sector": "3"
+  },
+  {
+    "code": "5621-1",
+    "name": "Catering Services",
+    "sector": "9"
+  },
+  {
+    "code": "41",
+    "name": "Construction of buildings",
+    "sector": "3"
+  },
+  {
+    "code": "421",
+    "name": "Construction of roads and railways",
+    "sector": "2"
+  },
+  {
+    "code": "011",
+    "name": "Crop Production and Plant Propagation",
+    "sector": "1"
+  },
+  {
+    "code": "431",
+    "name": "Demolition and site preparation",
+    "sector": "5"
+  },
+  {
+    "code": "351",
+    "name": "Electric power generation, transmission and distribution",
+    "sector": "4"
+  },
+  {
+    "code": "854106",
+    "name": "Fitness/ Yoga Instruction",
+    "sector": "15"
+  },
+  {
+    "code": "5610-1",
+    "name": "Food and beverage service activities",
+    "sector": "9"
+  },
+  {
+    "code": "8121",
+    "name": "General cleaning of buildings",
+    "sector": "5"
+  },
+  {
+    "code": "469-1",
+    "name": "General Trade",
+    "sector": "3"
+  },
+  {
+    "code": "28",
+    "name": "Manufacture of machinery and equipment",
+    "sector": "2"
+  },
+  {
+    "code": "192",
+    "name": "Manufacture of refined petroleum products",
+    "sector": "2"
+  },
+  {
+    "code": "1104-2",
+    "name": "Manufacture of soft drinks; production of mineral waters and other bottled waters - Factory",
+    "sector": "5"
+  },
+  {
+    "code": "1104-1",
+    "name": "Manufacture of soft drinks; production of mineral waters and other bottled waters - Workshop",
+    "sector": "3"
+  },
+  {
+    "code": "2511-1",
+    "name": "Manufacture of structural metal products - Workshop",
+    "sector": "2"
+  },
+  {
+    "code": "383-1",
+    "name": "Materials recovery - Workshop",
+    "sector": "5"
+  },
+  {
+    "code": "64193",
+    "name": "Money Exchange Companies",
+    "sector": "11"
+  },
+  {
+    "code": "591",
+    "name": "Motion picture, video and television programme activities",
+    "sector": "10"
+  },
+  {
+    "code": "90002",
+    "name": "Operation of concert and theatre halls and other art facilities",
+    "sector": "17"
+  },
+  {
+    "code": "8129-1",
+    "name": "Other building and industrial cleaning activities",
+    "sector": "2"
+  },
+  {
+    "code": "8129-2",
+    "name": "Other building and industrial cleaning activities - Public and Private utility Contracts",
+    "sector": "5"
+  },
+  {
+    "code": "8299-2",
+    "name": "Other business support service activities - Clearance of Government Transactions",
+    "sector": "8"
+  },
+  {
+    "code": "8299-4",
+    "name": "Other business support service activities - Employment Registration Center",
+    "sector": "11"
+  },
+  {
+    "code": "74909",
+    "name": "Other professional, scientific and technical activities",
+    "sector": "16"
+  },
+  {
+    "code": "439",
+    "name": "Other specialized construction activities",
+    "sector": "4"
+  },
+  {
+    "code": "71209-1",
+    "name": "Other Testing and analysis activities",
+    "sector": "8"
+  },
+  {
+    "code": "8292-1",
+    "name": "Packaging activities",
+    "sector": "8"
+  },
+  {
+    "code": "960991",
+    "name": "Personal Events Planners",
+    "sector": "17"
+  },
+  {
+    "code": "352",
+    "name": "Production & Distribution of Natural Gas",
+    "sector": "4"
+  },
+  {
+    "code": "73101",
+    "name": "Publicity and Advertising",
+    "sector": "13"
+  },
+  {
+    "code": "581-5",
+    "name": "Publishing of books, periodicals and other publishing activities - Office Printing Services",
+    "sector": "10"
+  },
+  {
+    "code": "581-4",
+    "name": "Publishing of books, periodicals and other publishing activities - Publishing and Distribution Houses",
+    "sector": "10"
+  },
+  {
+    "code": "081-1",
+    "name": "Quarrying of stone, sand and clay",
+    "sector": "2"
+  },
+  {
+    "code": "682-2",
+    "name": "Real estate activities on a fee or contract basis - brokerage in Real estate",
+    "sector": "16"
+  },
+  {
+    "code": "681",
+    "name": "Real estate activities with own or leased property",
+    "sector": "3"
+  },
+  {
+    "code": "77301",
+    "name": "Renting and operational leasing of machinery and equipment",
+    "sector": "2"
+  },
+  {
+    "code": "77307",
+    "name": "Renting and operational leasing of office machinery and equipment",
+    "sector": "3"
+  },
+  {
+    "code": "9511",
+    "name": "Repair of computers and peripheral equipment",
+    "sector": "3"
+  },
+  {
+    "code": "3313",
+    "name": "Repair of electronic, electrical, and optical equipment",
+    "sector": "3"
+  },
+  {
+    "code": "4791",
+    "name": "Retail sale via Internet",
+    "sector": "15"
+  },
+  {
+    "code": "4653",
+    "name": "Sale/Trade of agricultural machinery, equipment and supplies",
+    "sector": "1"
+  },
+  {
+    "code": "47611",
+    "name": "Sale/Trade of books, magazines, newspapers",
+    "sector": "3"
+  },
+  {
+    "code": "47592",
+    "name": "Sale/Trade of Electrical and electronic Household appliances",
+    "sector": "16"
+  },
+  {
+    "code": "47735-1",
+    "name": "Sale/Trade of flowers, plants,and seeds",
+    "sector": "1"
+  },
+  {
+    "code": "4721-1",
+    "name": "Sale/Trade of Food and Beverages",
+    "sector": "3"
+  },
+  {
+    "code": "474",
+    "name": "Sale/Trade of information, and communications equipment and related software",
+    "sector": "3"
+  },
+  {
+    "code": "47733-1",
+    "name": "Sale/Trade of jewellery and related articles - Gold and Precious Jewellery",
+    "sector": "11"
+  },
+  {
+    "code": "451",
+    "name": "Sale/Trade of motor vehicles",
+    "sector": "3"
+  },
+  {
+    "code": "4661-7",
+    "name": "Sale/Trade of solid, liquid and gaseous fuels and related products - Direct export of petroleum products",
+    "sector": "2"
+  },
+  {
+    "code": "4661-4",
+    "name": "Sale/Trade of solid, liquid and gaseous fuels and related products - Mixed Petroleum products export (feedstock)",
+    "sector": "2"
+  },
+  {
+    "code": "47612",
+    "name": "Sale/Trade of Stationary, arts and crafts, and office/professional tools and apparatus",
+    "sector": "10"
+  },
+  {
+    "code": "47723",
+    "name": "Sale/Tradeof perfumery, cosmetic and toiletries",
+    "sector": "12"
+  },
+  {
+    "code": "46692",
+    "name": "Sale/Trading in fertilizers,Soil Conditioners and Pesticides",
+    "sector": "1"
+  },
+  {
+    "code": "46691-1",
+    "name": "Sale/Trading in industrial chemicals",
+    "sector": "3"
+  },
+  {
+    "code": "46694",
+    "name": "Sale/Trading in plastic material and rubber products",
+    "sector": "1"
+  },
+  {
+    "code": "5229021",
+    "name": "Sea Freight Agent",
+    "sector": "8"
+  },
+  {
+    "code": "64991",
+    "name": "Selling and buying shares and securities for company’s account only",
+    "sector": "11"
+  },
+  {
+    "code": "5229022",
+    "name": "Shipping Agent",
+    "sector": "8"
+  },
+  {
+    "code": "353",
+    "name": "Steam and air conditioning supply",
+    "sector": "4"
+  },
+  {
+    "code": "0910-2",
+    "name": "Support activities for petroleum and natural gas extraction - Technical services for oil and gas",
+    "sector": "2"
+  },
+  {
+    "code": "8522-1",
+    "name": "Technical and Vocational Training - Management and Business Training Centers and Institutes",
+    "sector": "15"
+  },
+  {
+    "code": "7911-1",
+    "name": "Travel office activities - Travel Agencies Office",
+    "sector": "14"
+  },
+  {
+    "code": "74902",
+    "name": "Valuation/ evaluation Activities",
+    "sector": "16"
+  },
+  {
+    "code": "521-1",
+    "name": "Warehousing and storage",
+    "sector": "8"
+  },
+  {
+    "code": "381",
+    "name": "Waste collection, treatment and disposal activities",
+    "sector": "5"
+  },
+  {
+    "code": "36-1",
+    "name": "Water collection, treatment and supply",
+    "sector": "5"
+  }
+]
