@@ -33,13 +33,75 @@ const matchesActivity = (name: string, needle: string) => {
   return n.includes(needle) || n.includes(stem(needle)) || stem(n).includes(stem(needle));
 };
 
+// Synonym map from everyday terms to the phrasing the registry actually uses.
+// The registry follows the ISIC4 international standard, whose category names
+// rarely match how people search: there is no "restaurant" — it's "Food and
+// beverage service activities"; no "IT" — it's "computer programming". Substring
+// and stemming can't bridge that vocabulary gap, so each alias expands to one or
+// more needles that DO appear in the ISIC4 names. Keys are matched on the whole
+// (lowercased) token; values are substrings looked up in the activity table.
+const ALIASES: Record<string, string[]> = {
+  restaurant: ["food and beverage service", "catering"],
+  restaurants: ["food and beverage service", "catering"],
+  cafe: ["food and beverage service"],
+  cafeteria: ["food and beverage service"],
+  coffee: ["food and beverage service"],
+  coffeeshop: ["food and beverage service"],
+  eatery: ["food and beverage service"],
+  dining: ["food and beverage service"],
+  "fast food": ["food and beverage service"],
+  takeaway: ["food and beverage service"],
+  catering: ["catering"],
+  grocery: ["sale/trade of food"],
+  groceries: ["sale/trade of food"],
+  supermarket: ["sale/trade of food"],
+  foodstuff: ["sale/trade of food", "food and beverage"],
+  it: ["computer", "information technology", "software"],
+  software: ["computer programming", "software", "information technology"],
+  tech: ["computer", "information technology"],
+  ecommerce: ["retail sale via", "internet"],
+  "e-commerce": ["retail sale via", "internet"],
+  online: ["retail sale via", "internet"],
+  realestate: ["real estate"],
+  property: ["real estate"],
+  construction: ["construction", "building"],
+  contractor: ["construction", "contracting"],
+  logistics: ["freight", "transport", "warehousing"],
+  shipping: ["freight", "sea", "water transport"],
+  salon: ["beauty", "hairdressing", "physical well-being"],
+  barber: ["hairdressing"],
+  gym: ["fitness", "sports"],
+  clinic: ["medical", "human health"],
+  pharmacy: ["pharmaceutical", "dispensing"],
+  hotel: ["accommodation", "hotel"],
+  car: ["motor vehicle"],
+  garage: ["motor vehicle", "repair"],
+  cleaning: ["cleaning"],
+  laundry: ["washing", "laundering", "textile"],
+};
+
+/**
+ * Expand a search needle into the list of needles to actually match against
+ * activity names: the original term plus any alias synonyms. Multi-word alias
+ * keys (e.g. "fast food") are matched against the full token.
+ */
+function expandNeedles(needle: string): string[] {
+  const key = needle.trim().toLowerCase();
+  const aliases = ALIASES[key] ?? ALIASES[key.replace(/\s+/gu, "")];
+  // When the term is a known alias, match the canonical expansions ONLY — not
+  // the lay term. Lay terms are often short/ambiguous ("it" is a substring of
+  // "digital", "security", ...) and would otherwise match unrelated activities.
+  return aliases ? aliases : [key];
+}
+
 /** Full-text search over the activity table (case-insensitive, lightly stemmed). */
 export function searchActivities(q: string, limit = 50): Activity[] {
   const needle = q.trim().toLowerCase();
   if (!needle) return [];
+  const needles = expandNeedles(needle);
   const out: Activity[] = [];
   for (const a of TABLE) {
-    if (a.code === needle || matchesActivity(a.name, needle)) {
+    if (a.code === needle || needles.some((n) => matchesActivity(a.name, n))) {
       out.push(a);
       if (out.length >= limit) break;
     }
@@ -69,10 +131,11 @@ export function resolveActivityNames(value?: string): string {
       out.push(...exact.map((a) => a.code));
       continue;
     }
-    const sub = TABLE.filter((a) => matchesActivity(a.name, lower));
+    const needles = expandNeedles(lower);
+    const sub = TABLE.filter((a) => needles.some((n) => matchesActivity(a.name, n)));
     if (sub.length) {
-      // Use every substring match so "restaurant" maps to all matching ISIC4
-      // codes (the registry treats multiple codes as OR).
+      // Use every match (including alias synonyms) so "restaurant" maps to all
+      // relevant ISIC4 codes (the registry treats multiple codes as OR).
       out.push(...sub.map((a) => a.code));
       continue;
     }

@@ -1,5 +1,9 @@
 [
   {
+    "code": "692-1",
+    "name": "Accounting Activities - Audit Firms"
+  },
+  {
     "code": "701-1",
     "name": "Activities of head offices or Management Offices",
     "sector": "13"
@@ -8,6 +12,14 @@
     "code": "014-1",
     "name": "Animal production",
     "sector": "1"
+  },
+  {
+    "code": "14104",
+    "name": "Apparel Tailoring Activities"
+  },
+  {
+    "code": "7990",
+    "name": "Arranging and Assembling Tours"
   },
   {
     "code": "433",
@@ -35,6 +47,22 @@
     "sector": "9"
   },
   {
+    "code": "5621-2",
+    "name": "Catering Services - Aircraft Catering Services"
+  },
+  {
+    "code": "5621-3",
+    "name": "Catering Services - Ship Chandelling Agent"
+  },
+  {
+    "code": "6202",
+    "name": "Computer Consultancy and computer facilities management activities"
+  },
+  {
+    "code": "6201",
+    "name": "Computer programming activities"
+  },
+  {
     "code": "41",
     "name": "Construction of buildings",
     "sector": "3"
@@ -55,9 +83,17 @@
     "sector": "5"
   },
   {
+    "code": "855-1",
+    "name": "Educational support activities"
+  },
+  {
     "code": "351",
     "name": "Electric power generation, transmission and distribution",
     "sector": "4"
+  },
+  {
+    "code": "4321",
+    "name": "Electrical Installation"
   },
   {
     "code": "854106",
@@ -70,6 +106,14 @@
     "sector": "9"
   },
   {
+    "code": "4923-1",
+    "name": "Freight transport by road - Internal Transport of goods"
+  },
+  {
+    "code": "4923-2",
+    "name": "Freight transport by road - International Transport of goods"
+  },
+  {
     "code": "8121",
     "name": "General cleaning of buildings",
     "sector": "5"
@@ -80,9 +124,73 @@
     "sector": "3"
   },
   {
+    "code": "469-4",
+    "name": "General Trade  - including sale/trade of Food, Beverages, and tobacco products"
+  },
+  {
+    "code": "9602-1",
+    "name": "Hairdressing and other beauty treatment -  Men"
+  },
+  {
+    "code": "6500-2",
+    "name": "Insurance/ Re-insurance Activities - Insurance and Re-insurance Companies - Branch"
+  },
+  {
+    "code": "619001",
+    "name": "Internet/ Call Cabins"
+  },
+  {
+    "code": "960111",
+    "name": "Ironing of textiles and fur products"
+  },
+  {
+    "code": "774",
+    "name": "Leasing of intellectual property and similar products, except copyrighted works"
+  },
+  {
+    "code": "452",
+    "name": "Maintenance and repair of motor vehicles"
+  },
+  {
+    "code": "702",
+    "name": "Management consultancy activities"
+  },
+  {
+    "code": "1071-2",
+    "name": "Manufacture of bakery products - Factory"
+  },
+  {
+    "code": "1071-1",
+    "name": "Manufacture of bakery products - Workshop"
+  },
+  {
+    "code": "241",
+    "name": "Manufacture of basic iron and steel"
+  },
+  {
+    "code": "310-2",
+    "name": "Manufacture of furniture - Factory"
+  },
+  {
+    "code": "231-2",
+    "name": "Manufacture of glass, fiberglass and their products - Factory"
+  },
+  {
+    "code": "321-1",
+    "name": "Manufacture of jewellery, bijouterie and related articles - Workshop"
+  },
+  {
     "code": "28",
     "name": "Manufacture of machinery and equipment",
     "sector": "2"
+  },
+  {
+    "code": "325-2",
+    "name": "Manufacture of medical and dental instruments and supplies - Factory"
+  },
+  {
+    "code": "222-2",
+    "name": "Manufacture of plastics products - Factory"
   },
   {
     "code": "192",
@@ -100,9 +208,21 @@
     "sector": "3"
   },
   {
+    "code": "2511-2",
+    "name": "Manufacture of structural metal products - Factory"
+  },
+  {
     "code": "2511-1",
     "name": "Manufacture of structural metal products - Workshop",
     "sector": "2"
+  },
+  {
+    "code": "13-2",
+    "name": "Manufacture of textiles - Factory"
+  },
+  {
+    "code": "96092-2",
+    "name": "Massage Parlours and other relaxation and bathing techniques services -  Ladies"
   },
   {
     "code": "383-1",
@@ -125,6 +245,14 @@
     "sector": "17"
   },
   {
+    "code": "9311",
+    "name": "Operation of sports facilities"
+  },
+  {
+    "code": "6312",
+    "name": "Operations of eMarketplaces / websites / web portals"
+  },
+  {
     "code": "8129-1",
     "name": "Other building and industrial cleaning activities",
     "sector": "2"
@@ -143,6 +271,14 @@
     "code": "8299-4",
     "name": "Other business support service activities - Employment Registration Center",
     "sector": "11"
+  },
+  {
+    "code": "73109",
+    "name": "Other Marketing/ Promotion Activities"
+  },
+  {
+    "code": "86209-8",
+    "name": "Other Medical center - Multi-Specialty Dental Center"
   },
   {
     "code": "74909",
@@ -170,9 +306,25 @@
     "sector": "17"
   },
   {
+    "code": "742-2",
+    "name": "Photographic activities - Laboratory for developing colour films"
+  },
+  {
+    "code": "43223",
+    "name": "Plumbing and Sanitary ware fixing"
+  },
+  {
+    "code": "1811",
+    "name": "Printing"
+  },
+  {
     "code": "352",
     "name": "Production & Distribution of Natural Gas",
     "sector": "4"
+  },
+  {
+    "code": "70209",
+    "name": "Public Relations"
   },
   {
     "code": "73101",
@@ -200,9 +352,17 @@
     "sector": "16"
   },
   {
+    "code": "682-1",
+    "name": "Real estate activities on a fee or contract basis - Management of Real estate"
+  },
+  {
     "code": "681",
     "name": "Real estate activities with own or leased property",
     "sector": "3"
+  },
+  {
+    "code": "771-1",
+    "name": "Renting and leasing of motor vehicles"
   },
   {
     "code": "77301",
@@ -213,6 +373,10 @@
     "code": "77307",
     "name": "Renting and operational leasing of office machinery and equipment",
     "sector": "3"
+  },
+  {
+    "code": "9512",
+    "name": "Repair of communication equipment"
   },
   {
     "code": "9511",
@@ -230,6 +394,18 @@
     "sector": "15"
   },
   {
+    "code": "4652",
+    "name": "Sale and installation of telecommunications equipment and parts"
+  },
+  {
+    "code": "4659-1",
+    "name": "Sale/Trade in other machinery and equipment and parts"
+  },
+  {
+    "code": "4659-2",
+    "name": "Sale/Trade in other machinery and equipment and parts - Medical Devices, Supplies and Related Spare Parts"
+  },
+  {
     "code": "4653",
     "name": "Sale/Trade of agricultural machinery, equipment and supplies",
     "sector": "1"
@@ -238,6 +414,14 @@
     "code": "47611",
     "name": "Sale/Trade of books, magazines, newspapers",
     "sector": "3"
+  },
+  {
+    "code": "4771",
+    "name": "Sale/Trade of clothing, footwear, apparel accessories, and leather articles"
+  },
+  {
+    "code": "4663",
+    "name": "Sale/Trade of construction materials, hardware, plumbing and heating equipment and supplies"
   },
   {
     "code": "47592",
@@ -255,6 +439,22 @@
     "sector": "3"
   },
   {
+    "code": "4721-2",
+    "name": "Sale/Trade of Food and Beverages - Fish/Marine species"
+  },
+  {
+    "code": "4721-3",
+    "name": "Sale/Trade of Food and Beverages - Healthy Food"
+  },
+  {
+    "code": "4764",
+    "name": "Sale/Trade of games and toys"
+  },
+  {
+    "code": "47593",
+    "name": "Sale/Trade of household utensils, cutlery, glassware, and related items"
+  },
+  {
     "code": "474",
     "name": "Sale/Trade of information, and communications equipment and related software",
     "sector": "3"
@@ -270,6 +470,26 @@
     "sector": "3"
   },
   {
+    "code": "4772-1",
+    "name": "Sale/Trade of pharmaceutical and medical goods - Pharmacy (Importing)"
+  },
+  {
+    "code": "4772-2",
+    "name": "Sale/Trade of pharmaceutical and medical goods - Pharmacy (non- importing)"
+  },
+  {
+    "code": "4772-5",
+    "name": "Sale/Trade of pharmaceutical and medical goods - Sale of Alternative medicine products"
+  },
+  {
+    "code": "47731",
+    "name": "Sale/Trade of photographic, optical and precision equipment"
+  },
+  {
+    "code": "47596",
+    "name": "Sale/Trade of Safety Systems"
+  },
+  {
     "code": "4661-7",
     "name": "Sale/Trade of solid, liquid and gaseous fuels and related products - Direct export of petroleum products",
     "sector": "2"
@@ -280,14 +500,30 @@
     "sector": "2"
   },
   {
+    "code": "47736-2",
+    "name": "Sale/Trade of souvenirs, craft work, religious articles, stamps and coins; Activities of commercial art galleries - Crafts activities"
+  },
+  {
+    "code": "4763",
+    "name": "Sale/Trade of sporting equipment"
+  },
+  {
     "code": "47612",
     "name": "Sale/Trade of Stationary, arts and crafts, and office/professional tools and apparatus",
     "sector": "10"
   },
   {
+    "code": "477341",
+    "name": "Sale/Trade Pet/ Animal food and accessories"
+  },
+  {
     "code": "47723",
     "name": "Sale/Tradeof perfumery, cosmetic and toiletries",
     "sector": "12"
+  },
+  {
+    "code": "46693",
+    "name": "Sale/Trading in cleaning materials"
   },
   {
     "code": "46692",
@@ -298,6 +534,10 @@
     "code": "46691-1",
     "name": "Sale/Trading in industrial chemicals",
     "sector": "3"
+  },
+  {
+    "code": "466999",
+    "name": "Sale/Trading in other industrial products/ raw material"
   },
   {
     "code": "46694",
@@ -315,9 +555,25 @@
     "sector": "11"
   },
   {
+    "code": "5223-7",
+    "name": "Service activities incidental to air transportation - Air and Ground Telecommunications Services for aircrafts"
+  },
+  {
+    "code": "1812",
+    "name": "Service activities related to printing"
+  },
+  {
     "code": "5229022",
     "name": "Shipping Agent",
     "sector": "8"
+  },
+  {
+    "code": "551-1",
+    "name": "Short term accommodation activities"
+  },
+  {
+    "code": "582",
+    "name": "Software publishing"
   },
   {
     "code": "353",
@@ -335,6 +591,22 @@
     "sector": "15"
   },
   {
+    "code": "61-4",
+    "name": "Telecommunication Activities - Individual license for international telecommunications services"
+  },
+  {
+    "code": "522105",
+    "name": "Towing and Road Side Assistance"
+  },
+  {
+    "code": "10711",
+    "name": "Traditional Baker"
+  },
+  {
+    "code": "7911-2",
+    "name": "Travel office activities - Airline General Sales Agent"
+  },
+  {
     "code": "7911-1",
     "name": "Travel office activities - Travel Agencies Office",
     "sector": "14"
@@ -348,6 +620,10 @@
     "code": "521-1",
     "name": "Warehousing and storage",
     "sector": "8"
+  },
+  {
+    "code": "9601",
+    "name": "Washing and (dry-) cleaning of textile and fur products"
   },
   {
     "code": "381",

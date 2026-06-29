@@ -68,6 +68,15 @@ curl 'http://localhost:3000/search?name_ar=%D8%AA%D8%AC%D8%A7%D8%B1%D8%A9&lang=a
 built by `node scripts/harvest-isic4.mjs`) covering common activities; raw ISIC4
 codes (`activity=521-1`) always work. Re-run the harvester to expand coverage.
 
+Matching has three layers, so everyday search terms resolve even though the
+registry uses formal **ISIC4** names: substring (`warehouse` → "Warehousing"),
+light stemming (`trade` → "Trading"), and a **synonym map** for lay terms the
+standard doesn't use — e.g. `restaurant`/`cafe` → "Food and beverage service
+activities" + "Catering", `it`/`software` → "Computer programming", `salon` →
+"Hairdressing and beauty", `pharmacy` → "Dispensing chemist". Aliases live in
+`ALIASES` in `src/activities.ts`. Use `/lookups/activity?q=<term>` to see exactly
+which codes a term resolves to.
+
 ## Run locally
 
 ```bash

@@ -14,7 +14,22 @@ import { writeFile, mkdir, readFile } from "node:fs/promises";
 import { SijilatClient } from "../dist/sijilat.js";
 
 const PER_SECTOR = Number(process.argv[2] ?? 3);
+const PER_TERM = Number(process.argv[3] ?? 3);
 const SECTORS = Array.from({ length: 18 }, (_, i) => String(i + 1));
+// Common English business-name terms — searching these and harvesting the
+// matched companies' activities captures the everyday verticals people filter by
+// (which a thin per-sector sample misses).
+const NAME_SEEDS = [
+  "restaurant", "cafe", "catering", "bakery", "retail", "wholesale", "trading",
+  "supermarket", "contracting", "construction", "real estate", "consultancy",
+  "information technology", "software", "computer", "telecommunication",
+  "advertising", "marketing", "transport", "logistics", "shipping", "travel",
+  "tourism", "hotel", "salon", "beauty", "clinic", "medical", "pharmacy",
+  "dental", "laundry", "garage", "automotive", "electrical", "plumbing",
+  "cleaning", "security", "manufacturing", "factory", "import export",
+  "investment", "insurance", "accounting", "law", "education", "training",
+  "gym", "sports", "jewellery", "tailoring", "printing", "photography",
+];
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const client = new SijilatClient();
@@ -59,6 +74,37 @@ for (const sector of SECTORS) {
     }
   }
   console.error(`sector ${sector}: ${companies.length} companies; total codes so far ${byCode.size}`);
+}
+
+// Pass 2: crawl common business-name terms to capture everyday verticals.
+for (const term of NAME_SEEDS) {
+  let companies = [];
+  try {
+    const { results } = await client.searchAll(
+      { nameEn: term },
+      { perPage: 10, maxItems: PER_TERM, maxScanPages: 1 },
+    );
+    companies = results;
+  } catch (e) {
+    console.error(`term "${term}" search failed: ${e.message}`);
+    continue;
+  }
+  for (const c of companies) {
+    await sleep(300);
+    try {
+      const jd = await client.detail(c.cr_number, c.branch);
+      detailCalls++;
+      const acts = Array.isArray(jd?.businessActivities) ? jd.businessActivities : [];
+      for (const a of acts) {
+        const code = (a.ISIC4_CD ?? "").trim();
+        const name = (a.ISIC4_NM ?? "").trim();
+        if (code && name && !byCode.has(code)) byCode.set(code, { code, name });
+      }
+    } catch (e) {
+      console.error(`detail ${c.cr_number}/${c.branch} failed: ${e.message}`);
+    }
+  }
+  console.error(`term "${term}": ${companies.length} companies; total codes so far ${byCode.size}`);
 }
 
 const out = [...byCode.values()].sort((a, b) => a.name.localeCompare(b.name));
