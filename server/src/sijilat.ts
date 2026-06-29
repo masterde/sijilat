@@ -87,6 +87,8 @@ export class SijilatClient {
   private tokenExpiry = 0;
   private lookupsCache: LookupTables | null = null;
   private inflightToken: Promise<string> | null = null;
+  // Cache live activity-search results per lowercased keyword (process-lifetime).
+  private activityCache = new Map<string, CodeName[]>();
   private readonly limiter = new RateLimiter(6);
 
   constructor(baseUrl = process.env.SIJILAT_BASE_URL || DEFAULT_BASE_URL) {
@@ -249,13 +251,78 @@ export class SijilatClient {
   }
 
   /**
+   * Live business-activity (ISIC4) search — the registry's own keyword endpoint
+   * used by the public activity picker. Matches names AND synonyms server-side
+   * (e.g. "restaurant" -> "Food and beverage service activities - Restaurants"),
+   * so it supersedes the bundled offline table. Results cached per keyword.
+   */
+  async searchActivitiesLive(keyword: string): Promise<CodeName[]> {
+    const q = keyword.trim();
+    if (!q) return [];
+    const key = q.toLowerCase();
+    const cached = this.activityCache.get(key);
+    if (cached) return cached;
+    const jd = (await this.post(
+      "Activity/SearchActivityAdvancedSearch",
+      activitySearchBody(q),
+      true,
+    )) as { RSLTDT?: unknown[] };
+    const rows = Array.isArray(jd?.RSLTDT) ? jd!.RSLTDT! : [];
+    const out: CodeName[] = rows
+      .map((r: any) => ({
+        code: (r.ISIC4_CD ?? "").trim(),
+        name: (r.ISIC4_LNM ?? r.ISIC4_NM ?? "").trim(),
+        flag: (r.ISIC4_ANM ?? "").trim() || undefined,
+      }))
+      .filter((a) => a.code);
+    this.activityCache.set(key, out);
+    return out;
+  }
+
+  /**
+   * Resolve a comma-separated activity filter to ISIC4 codes. Codes pass through
+   * unchanged; each name is resolved via the live activity endpoint (OR-combined
+   * across all its matches). Falls back to the bundled table if the live call
+   * fails so search degrades gracefully when the registry is unreachable.
+   */
+  private async resolveActivityCodes(value?: string): Promise<string> {
+    if (!value) return "";
+    const out: string[] = [];
+    for (let tok of value.split(",")) {
+      tok = tok.trim().replace(/'/g, "");
+      if (!tok) continue;
+      if (/^[0-9]+(-[0-9]+)?$/.test(tok)) {
+        out.push(tok);
+        continue;
+      }
+      let hits: CodeName[] = [];
+      try {
+        hits = await this.searchActivitiesLive(tok);
+      } catch {
+        // Live endpoint unreachable — handled by the offline fallback below.
+      }
+      if (hits.length) {
+        out.push(...hits.map((h) => h.code));
+        continue;
+      }
+      // Live returned nothing (or failed): fall back to the offline table +
+      // synonym aliases, which catch lay terms the registry doesn't index
+      // (e.g. "cafe" -> food-and-beverage codes). Last resort: pass the token
+      // through so the upstream returns a deterministic (empty) result.
+      const fallback = resolveActivityNames(tok);
+      out.push(fallback || tok);
+    }
+    return [...new Set(out)].join(",");
+  }
+
+  /**
    * Resolves human-readable filter names to registry codes. Activity names
-   * resolve locally against the bundled ISIC4 table (no network). The
+   * resolve via the live activity endpoint (with offline-table fallback). The
    * status/type/nationality/sector/municipality tables are fetched (and cached)
    * only when at least one of those filters is a name rather than a code.
    */
   private async resolveFilters(f: SearchFilters): Promise<SearchFilters> {
-    const out: SearchFilters = { ...f, activity: resolveActivityNames(f.activity) };
+    const out: SearchFilters = { ...f, activity: await this.resolveActivityCodes(f.activity) };
     const needsLookups = [out.status, out.type, out.nationality, out.sector, out.municipality].some(needsResolve);
     if (!needsLookups) return out;
     const lt = await this.lookups();
@@ -309,6 +376,38 @@ function quoteCodes(v?: string): string {
     .filter(Boolean)
     .map((p) => `'${p}'`)
     .join(",");
+}
+
+/**
+ * Request body for Activity/SearchActivityAdvancedSearch. The keyword goes in
+ * ISIC4_NM (the registry searches names + synonyms). The many *_YN flags are
+ * advanced filters left empty for a plain keyword search. SESSION_ID is sent
+ * empty — the bearer token is the auth; no browser session is needed.
+ */
+function activitySearchBody(keyword: string) {
+  return {
+    ISIC4_CD: "",
+    ISIC4_NM: keyword,
+    ISIC4_DETL: "",
+    VTUAL_ADDR_YN: "",
+    AME_YN: "",
+    FORGN_YN: "",
+    GCC_YN: "",
+    BAH_51_RATIO_YN: "",
+    ICR_YN: "",
+    CCR_YN: "",
+    SING_YN: "",
+    EURO1_YN: "",
+    INCLU_BAH_YN: "",
+    cult_lang: "EN",
+    Input_CULT_LANG: "EN",
+    CULT_LANG: "EN",
+    cultLang: "EN",
+    CurrentMenuTyp: "A",
+    CurrentMenu_Type: "A",
+    MENU_TYPE: "A",
+    SESSION_ID: "",
+  };
 }
 
 function buildSearchBody(f: SearchFilters, page: number, perPage: number, langAr: boolean) {

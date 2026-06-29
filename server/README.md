@@ -64,18 +64,21 @@ curl 'http://localhost:3000/search?name_ar=%D8%AA%D8%AC%D8%A7%D8%B1%D8%A9&lang=a
 
 ### Activity (ISIC4) coverage
 
-`activity=<name>` resolves against a bundled table (`src/data/isic4.json`,
-built by `node scripts/harvest-isic4.mjs`) covering common activities; raw ISIC4
-codes (`activity=521-1`) always work. Re-run the harvester to expand coverage.
+`activity=<name>` resolves through the **registry's own live activity search**
+(`POST /api/Activity/SearchActivityAdvancedSearch`) — the same endpoint the
+official site's activity picker uses — so a term like `restaurant` resolves to
+the registry's real restaurant ISIC4 codes and returns the same precise set the
+official site shows. Results are cached per keyword. Raw ISIC4 codes
+(`activity=521-1`) always pass through unchanged.
 
-Matching has three layers, so everyday search terms resolve even though the
-registry uses formal **ISIC4** names: substring (`warehouse` → "Warehousing"),
-light stemming (`trade` → "Trading"), and a **synonym map** for lay terms the
-standard doesn't use — e.g. `restaurant`/`cafe` → "Food and beverage service
-activities" + "Catering", `it`/`software` → "Computer programming", `salon` →
-"Hairdressing and beauty", `pharmacy` → "Dispensing chemist". Aliases live in
-`ALIASES` in `src/activities.ts`. Use `/lookups/activity?q=<term>` to see exactly
-which codes a term resolves to.
+If the live endpoint is unreachable, or returns no match for a lay term the
+registry doesn't index (e.g. `cafe`), resolution falls back to a bundled offline
+table (`src/data/isic4.json`, built by `node scripts/harvest-isic4.mjs`) plus a
+**synonym map** (`ALIASES` in `src/activities.ts`) that maps everyday words to
+ISIC4 phrasing (`cafe` → "Food and beverage service", `it`/`software` →
+"Computer programming", `salon` → "Hairdressing and beauty"). The
+`/lookups/activity?q=<term>` response reports which path served it via a
+`source` field (`live` or `offline_fallback`).
 
 ## Run locally
 

@@ -171,22 +171,36 @@ app.get("/company/:cr", async (c) => {
 
 app.get("/lookups", async (c) => handle(c, () => client.lookups()));
 
-// Activity (ISIC4) name search over the bundled table — must be registered
-// before the /lookups/:table param route so "activity" doesn't fall through.
+// Activity (ISIC4) keyword search via the registry's live activity endpoint —
+// must be registered before the /lookups/:table param route so "activity"
+// doesn't fall through. Falls back to the bundled offline table if the live
+// endpoint is unreachable.
 app.get("/lookups/activity", (c) => {
   const query = c.req.query("q") ?? "";
   if (!query.trim()) {
     return c.json(
       {
         table: "activity",
-        note: "pass ?q=<text> to search business activities by name (e.g. ?q=restaurant). Use the returned code with /search?activity=<code>; activity=<name> also resolves automatically.",
-        total_indexed: activityTableSize(),
+        note: "pass ?q=<text> to search business activities by name (e.g. ?q=restaurant), powered by the registry's live activity search. Use the returned code with /search?activity=<code>; activity=<name> also resolves automatically.",
       },
       200,
     );
   }
-  const values = searchActivities(query, clampInt(c.req.query("limit"), 50, 1, 500));
-  return c.json({ table: "activity", query, count: values.length, values, total_indexed: activityTableSize() });
+  return handle(c, async () => {
+    const limit = clampInt(c.req.query("limit"), 50, 1, 500);
+    let live: Awaited<ReturnType<typeof client.searchActivitiesLive>> = [];
+    try {
+      live = await client.searchActivitiesLive(query);
+    } catch {
+      // fall through to offline table below
+    }
+    if (live.length) {
+      return { table: "activity", query, source: "live", count: live.length, values: live.slice(0, limit) };
+    }
+    // Live found nothing (or was unreachable): offline table + synonym aliases.
+    const values = searchActivities(query, limit);
+    return { table: "activity", query, source: "offline_fallback", count: values.length, values, total_indexed: activityTableSize() };
+  });
 });
 
 app.get("/lookups/:table", async (c) => {

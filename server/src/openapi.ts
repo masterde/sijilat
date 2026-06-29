@@ -149,7 +149,7 @@ export const openapiSpec = {
     "/lookups/activity": {
       get: {
         summary: "Search business activities (ISIC4) by name",
-        description: "Returns ISIC4 {code,name} matches from the bundled activity table. Use the code with /search?activity=<code>; /search?activity=<name> also resolves automatically. Raw ISIC4 codes always work even when not in the table.",
+        description: "Returns ISIC4 {code,name} matches from the registry's live activity search (source: 'live'); falls back to a bundled offline table with synonym aliases if the live endpoint is unreachable or has no match (source: 'offline_fallback'). Use the code with /search?activity=<code>; /search?activity=<name> also resolves automatically. Raw ISIC4 codes always work.",
         parameters: [
           { name: "q", in: "query", description: "Activity name search text (e.g. restaurant, warehouse).", schema: { type: "string", example: "restaurant" } },
           { name: "limit", in: "query", description: "Max matches (default 50).", schema: { type: "integer", default: 50 } },
