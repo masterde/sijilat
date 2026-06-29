@@ -1,0 +1,58 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-06-29T11:50:29.38664Z",
+  "printing_press_version": "4.27.0",
+  "api_name": "sijilat",
+  "display_name": "Sijilat",
+  "cli_name": "sijilat-pp-cli",
+  "creator": {
+    "handle": "masterde",
+    "name": "Baker"
+  },
+  "owner": "masterde",
+  "printer": "masterde",
+  "printer_name": "Baker",
+  "spec_format": "internal",
+  "spec_checksum": "sha256:5be6f9c442d7873bd410bafed6a269381a4107ba6531384d82c6544bfa7b6100",
+  "run_id": "20260629-122653-cc93a865",
+  "category": "sales-and-crm",
+  "description": "The first free, scriptable, agent-native CLI for Bahrain's commercial registry — with a local store, ownership-graph traversal, and change-diffing no other tool has.",
+  "mcp_binary": "sijilat-pp-mcp",
+  "mcp_tool_count": 2,
+  "mcp_public_tool_count": 2,
+  "mcp_ready": "full",
+  "api_version": "0.1.0",
+  "auth_type": "none",
+  "novel_features": [
+    {
+      "name": "CR watch + diff",
+      "command": "diff",
+      "description": "Detect exactly what changed on a company (shareholders, signatories, capital, status, address) since you last checked."
+    },
+    {
+      "name": "Ownership graph",
+      "command": "graph",
+      "description": "Traverse the partner -\u003e company -\u003e partner network around a CR to surface direct and indirect links."
+    },
+    {
+      "name": "Who-controls (person portfolio)",
+      "command": "controls",
+      "description": "List every company a person is a partner, signatory, or director of, with their role and share count."
+    },
+    {
+      "name": "Portfolio change feed",
+      "command": "feed",
+      "description": "One agent-pollable stream of every change across all watched companies since the last sync."
+    },
+    {
+      "name": "Expiry / renewal alerts",
+      "command": "expiring",
+      "description": "List watched companies whose CR expires within a window, flagging any that quietly went EXPIRED or CANCELLED."
+    },
+    {
+      "name": "Market segment analytics",
+      "command": "stats",
+      "description": "Aggregate the synced corpus by status, company type, nationality, sector, or registration year."
+    }
+  ]
+}

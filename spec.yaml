@@ -1,0 +1,62 @@
+name: sijilat
+description: "Bahrain commercial registry (Sijilat) CLI — search, profile, sync, and analyze CRs"
+version: "0.1.0"
+base_url: "https://api.sijilat.bh/api/"
+category: sales-and-crm
+http_transport: standard
+health_check_path: "/"
+auth:
+  type: none
+config:
+  format: toml
+  path: "~/.config/sijilat/config.toml"
+resources:
+  cr:
+    description: "Commercial registrations (companies) in Bahrain's Sijilat registry"
+    endpoints:
+      search:
+        method: POST
+        path: "CRdetails/AdvanceSearchCR_Paging"
+        description: "Search commercial registrations by name (EN/AR), CR number, status, type, sector, activity, partner, nationality, municipality, address, or registration date"
+        response:
+          type: array
+          item: CompanyRow
+        response_path: jsonData.CR_list
+        body:
+          - {name: CR_LNM, type: string, required: false, description: "English company name (partial match)"}
+          - {name: CR_ANM, type: string, required: false, description: "Arabic company name (partial match)"}
+          - {name: CR_NO, type: string, required: false, description: "Commercial Registration number"}
+          - {name: STATUS, type: string, required: false, description: "Status filter, e.g. 'ACTIVE'"}
+      detail:
+        method: POST
+        path: "CRdetails/CompleteCRDetails"
+        description: "Full company profile: capital, shareholders, board, signatories, address, activities, amendment history, branches"
+        response:
+          type: object
+          item: CompanyDetail
+        response_path: jsonData
+        body:
+          - {name: CR_NO, type: string, required: true, positional: true, description: "Commercial Registration number"}
+          - {name: BRANCH_NO, type: string, required: true, description: "Branch number (head office = 1)"}
+types:
+  CompanyRow:
+    fields:
+      - {name: CR_NO, type: string}
+      - {name: BRANCH_NO, type: string}
+      - {name: CR_LNM, type: string}
+      - {name: CR_ANM, type: string}
+      - {name: CM_TYP_DESC, type: string}
+      - {name: REG_DATE, type: string}
+      - {name: EXPIRE_DATE, type: string}
+      - {name: STATUS, type: string}
+      - {name: ACTIVITIES, type: string}
+      - {name: SECTOR, type: string}
+  CompanyDetail:
+    fields:
+      - {name: company_summary, type: object}
+      - {name: commercialAddress, type: object}
+      - {name: companyCapitalDetails, type: object}
+      - {name: shareholdersAndPartners, type: array}
+      - {name: boardofDirectors, type: array}
+      - {name: amendhistory, type: array}
+      - {name: otherbranchlist, type: array}

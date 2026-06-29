@@ -1,0 +1,69 @@
+{
+  "api_name": "sijilat",
+  "base_url": "https://api.sijilat.bh/api/",
+  "description": "The first free, scriptable, agent-native CLI for Bahrain's commercial registry — with a local store, ownership-graph traversal, and change-diffing no other tool has.",
+  "mcp_ready": "full",
+  "http_transport": "standard",
+  "auth": {
+    "type": "none"
+  },
+  "required_headers": [],
+  "tools": [
+    {
+      "name": "cr_detail",
+      "description": "Full company profile: capital, shareholders, board, signatories, address, activities, amendment history, branches. Required: CR_NO, BRANCH_NO. Returns the new CompanyDetail.",
+      "method": "POST",
+      "path": "CRdetails/CompleteCRDetails",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "CR_NO",
+          "type": "string",
+          "location": "body",
+          "description": "Commercial Registration number",
+          "required": true
+        },
+        {
+          "name": "BRANCH_NO",
+          "type": "string",
+          "location": "body",
+          "description": "Branch number (head office = 1)",
+          "required": true
+        }
+      ]
+    },
+    {
+      "name": "cr_search",
+      "description": "Search commercial registrations by name (EN/AR), CR number, status, type, sector, activity, partner, nationality, municipality, address, or registration date. Optional: CR_LNM, CR_ANM, CR_NO (plus 1 more). Returns array of CompanyRow.",
+      "method": "POST",
+      "path": "CRdetails/AdvanceSearchCR_Paging",
+      "no_auth": true,
+      "params": [
+        {
+          "name": "CR_LNM",
+          "type": "string",
+          "location": "body",
+          "description": "English company name (partial match)"
+        },
+        {
+          "name": "CR_ANM",
+          "type": "string",
+          "location": "body",
+          "description": "Arabic company name (partial match)"
+        },
+        {
+          "name": "CR_NO",
+          "type": "string",
+          "location": "body",
+          "description": "Commercial Registration number"
+        },
+        {
+          "name": "STATUS",
+          "type": "string",
+          "location": "body",
+          "description": "Status filter, e.g. 'ACTIVE'"
+        }
+      ]
+    }
+  ]
+}

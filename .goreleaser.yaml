@@ -1,0 +1,51 @@
+version: 2
+project_name: sijilat-pp-cli
+changelog:
+  disable: true
+builds:
+  - id: sijilat-pp-cli
+    main: ./cmd/sijilat-pp-cli
+    binary: sijilat-pp-cli
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X sijilat-pp-cli/internal/cli.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+  - id: sijilat-pp-mcp
+    main: ./cmd/sijilat-pp-mcp
+    binary: sijilat-pp-mcp
+    env:
+      - CGO_ENABLED=0
+    ldflags:
+      - -s -w -X main.version={{ .Version }}
+    targets:
+      - darwin_amd64
+      - darwin_arm64
+      - linux_amd64
+      - linux_arm64
+      - windows_amd64
+      - windows_arm64
+archives:
+  - formats: [tar.gz]
+    name_template: "{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}"
+    format_overrides:
+      - goos: windows
+        formats: [zip]
+checksum:
+  name_template: checksums.txt
+brews:
+  - name: sijilat-pp-cli
+    repository:
+      owner: masterde
+      name: homebrew-tap
+    homepage: "https://github.com/masterde/sijilat-pp-cli"
+    description: "The first free, scriptable, agent-native CLI for Bahrain's commercial registry — with a local store, ownership-graph traversal, and change-diffing no other tool has."
+    install: |
+      bin.install "sijilat-pp-cli"
+      bin.install "sijilat-pp-mcp"
