@@ -100,12 +100,62 @@
           {
             "name": "status",
             "in": "query",
-            "description": "Status name(s) or code(s); names resolve case-insensitively (e.g. ACTIVE). Comma-separate for multiple.",
             "required": false,
+            "description": "Filter by commercial-registration status. Accepts status name(s) or numeric code(s), case-insensitive, comma-separated for multiple (e.g. `ACTIVE,FROZEN`). You can also pass a lifecycle flag (`Active` or `Deleted`) to match every status in that group.\n\nAll 41 options, grouped by lifecycle flag:\n- **Active** (25): ACTIVE, ACTIVE WITHOUT LICENSE, DORMANT, FROZEN, FROZEN - NOT RENEWED, NOT RENEWED, NOT RENEWED WITHOUT LICENSE, Suspended by National Bureau for Revenue, Suspended by National Bureau for Revenue - UNDER SEQUESTER, UNDER LEGAL CUSTUDY, UNDER LEGAL CUSTUDY - NOT RENEWED, UNDER LIQUIDATION, UNDER LIQUIDATION – UNDER SEQUESTER, UNDER MORTGAGE, UNDER MORTGAGE - NOT RENEWED, UNDER MORTGAGE - NOT RENEWED - UNDER SEQUESTER, UNDER MORTGAGE - UNDER SEQUESTER, UNDER SEQUESTER, UNDER SEQUESTER - NOT RENEWED, UNDER SEQUESTER - NOT RENEWED WITHOUT LICENSE, UNDER SEQUESTER AND UNDER LEGAL CUSTODY, UNDER SEQUESTER WITHOUT LICENSE, Under Sequester and Under Legal Custody Not Renewed, VIOLATION - NOT RENEWED, VIOLATION - RENEWED\n- **Deleted** (16): BANKRUPT, BANKRUPT - UNDER SEQUESTER, DELETED - MERGED WITH ANOTHER BRANCH, DELETED BY RESOLUTION, DELETED BY RESOLUTION - UNDER SEQUESTER, DELETED WITH PAYMENT, DELETED WITH PAYMENT - SHELF COMPANY, DELETED WITH PAYMENT WITHOUT LICENSE, DELETED WITHOUT PAYMENT, Deactivated for Not Renewing the CR, Deactivated for Not Renewing the CR  - SHELF COMPANY, Deactivated for Not Renewing the CR - UNDER SEQUESTER, Deactivated for Not Renewing the CR WITHOUT LICENSE, LIQUIDATED, NEW REGISTRATION OR NEW BRANCH HAS BEEN REJECTED, SOLD OR LEGAL STATUS CHANGED",
             "schema": {
-              "type": "string",
-              "example": "ACTIVE"
-            }
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "ACTIVE",
+                  "ACTIVE WITHOUT LICENSE",
+                  "BANKRUPT",
+                  "BANKRUPT - UNDER SEQUESTER",
+                  "DELETED - MERGED WITH ANOTHER BRANCH",
+                  "DELETED BY RESOLUTION",
+                  "DELETED BY RESOLUTION - UNDER SEQUESTER",
+                  "DELETED WITH PAYMENT",
+                  "DELETED WITH PAYMENT - SHELF COMPANY",
+                  "DELETED WITH PAYMENT WITHOUT LICENSE",
+                  "DELETED WITHOUT PAYMENT",
+                  "DORMANT",
+                  "Deactivated for Not Renewing the CR",
+                  "Deactivated for Not Renewing the CR  - SHELF COMPANY",
+                  "Deactivated for Not Renewing the CR - UNDER SEQUESTER",
+                  "Deactivated for Not Renewing the CR WITHOUT LICENSE",
+                  "FROZEN",
+                  "FROZEN - NOT RENEWED",
+                  "LIQUIDATED",
+                  "NEW REGISTRATION OR NEW BRANCH HAS BEEN REJECTED",
+                  "NOT RENEWED",
+                  "NOT RENEWED WITHOUT LICENSE",
+                  "SOLD OR LEGAL STATUS CHANGED",
+                  "Suspended by National Bureau for Revenue",
+                  "Suspended by National Bureau for Revenue - UNDER SEQUESTER",
+                  "UNDER LEGAL CUSTUDY",
+                  "UNDER LEGAL CUSTUDY - NOT RENEWED",
+                  "UNDER LIQUIDATION",
+                  "UNDER LIQUIDATION – UNDER SEQUESTER",
+                  "UNDER MORTGAGE",
+                  "UNDER MORTGAGE - NOT RENEWED",
+                  "UNDER MORTGAGE - NOT RENEWED - UNDER SEQUESTER",
+                  "UNDER MORTGAGE - UNDER SEQUESTER",
+                  "UNDER SEQUESTER",
+                  "UNDER SEQUESTER - NOT RENEWED",
+                  "UNDER SEQUESTER - NOT RENEWED WITHOUT LICENSE",
+                  "UNDER SEQUESTER AND UNDER LEGAL CUSTODY",
+                  "UNDER SEQUESTER WITHOUT LICENSE",
+                  "Under Sequester and Under Legal Custody Not Renewed",
+                  "VIOLATION - NOT RENEWED",
+                  "VIOLATION - RENEWED"
+                ]
+              },
+              "example": [
+                "ACTIVE"
+              ]
+            },
+            "style": "form",
+            "explode": false
           },
           {
             "name": "type",
@@ -150,12 +200,26 @@
           {
             "name": "municipality",
             "in": "query",
-            "description": "Municipality by name or code (see /lookups/municipality)",
             "required": false,
+            "description": "Filter by municipality. Accepts municipality name(s) or code(s), case-insensitive, comma-separated for multiple.\n\nAll 5 options:\n- Muharraq Municipality\n- Manama Municipality\n- Northern Area Municipality\n- Central Area Municipality\n- Southern Area Municipality",
             "schema": {
-              "type": "string",
-              "example": "Manama"
-            }
+              "type": "array",
+              "items": {
+                "type": "string",
+                "enum": [
+                  "Muharraq Municipality",
+                  "Manama Municipality",
+                  "Northern Area Municipality",
+                  "Central Area Municipality",
+                  "Southern Area Municipality"
+                ]
+              },
+              "example": [
+                "Manama Municipality"
+              ]
+            },
+            "style": "form",
+            "explode": false
           },
           {
             "name": "partner",

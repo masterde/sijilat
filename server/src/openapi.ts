@@ -61,6 +61,72 @@ const filterParams = [
   schema: { type: "string", ...(example ? { example } : {}) },
 }));
 
+/** A lookup row from the registry (code + display name + optional lifecycle flag). */
+export type LookupOption = { code: string; name: string; flag?: string };
+
+/** Live lookup option lists injected into the spec; any omitted set degrades to a free-form string param. */
+export interface SpecOptions {
+  status?: ReadonlyArray<LookupOption>;
+  municipalities?: ReadonlyArray<LookupOption>;
+}
+
+/**
+ * Build an enumerated query parameter from live lookup values. When values are
+ * present we model it as a comma-joined array whose items enumerate every NAME
+ * (style:form, explode:false serialises to `?status=ACTIVE,FROZEN`) and list the
+ * full set in the description. Without values (registry unreachable at build
+ * time) it degrades to the free-form `fallback` string param. Codes — and, when
+ * present, lifecycle flags — are also accepted at runtime regardless.
+ */
+function enumeratedParam(
+  name: string,
+  values: ReadonlyArray<LookupOption> | undefined,
+  opts: { intro: string; fallback: string; example: string; groupByFlag?: boolean },
+) {
+  const base = { name, in: "query", required: false } as const;
+  if (!values || values.length === 0) {
+    return { ...base, description: opts.fallback, schema: { type: "string", example: opts.example } };
+  }
+  const hasFlags = Boolean(opts.groupByFlag && values.some((v) => v.flag));
+  let listing: string;
+  if (hasFlags) {
+    const byFlag = new Map<string, string[]>();
+    for (const v of values) {
+      const f = v.flag || "Other";
+      (byFlag.get(f) ?? byFlag.set(f, []).get(f)!).push(v.name);
+    }
+    listing = [...byFlag.entries()].map(([flag, names]) => `- **${flag}** (${names.length}): ${names.join(", ")}`).join("\n");
+  } else {
+    listing = values.map((v) => `- ${v.name}`).join("\n");
+  }
+  return {
+    ...base,
+    description: `${opts.intro}\n\nAll ${values.length} options${hasFlags ? ", grouped by lifecycle flag" : ""}:\n${listing}`,
+    schema: { type: "array", items: { type: "string", enum: values.map((v) => v.name) }, example: [opts.example] },
+    style: "form",
+    explode: false,
+  };
+}
+
+/** Search parameters with the (optionally live) enumerated params spliced in by name. */
+function buildSearchParams(options: SpecOptions = {}) {
+  const replace: Record<string, ReturnType<typeof enumeratedParam>> = {
+    status: enumeratedParam("status", options.status, {
+      intro:
+        "Filter by commercial-registration status. Accepts status name(s) or numeric code(s), case-insensitive, comma-separated for multiple (e.g. `ACTIVE,FROZEN`). You can also pass a lifecycle flag (`Active` or `Deleted`) to match every status in that group.",
+      fallback: "Status name(s) or code(s); names resolve case-insensitively (e.g. ACTIVE). Comma-separate for multiple.",
+      example: "ACTIVE",
+      groupByFlag: true,
+    }),
+    municipality: enumeratedParam("municipality", options.municipalities, {
+      intro: "Filter by municipality. Accepts municipality name(s) or code(s), case-insensitive, comma-separated for multiple.",
+      fallback: "Municipality by name or code (see /lookups/municipality)",
+      example: "Manama Municipality",
+    }),
+  };
+  return [...filterParams.map((p) => replace[p.name] ?? p), ...pagingParams];
+}
+
 const pagingParams = [
   { name: "page", in: "query", description: "Page number (default 1).", schema: { type: "integer", default: 1, minimum: 1 } },
   { name: "per_page", in: "query", description: "Results per page (default 25, max 200). Alias: limit.", schema: { type: "integer", default: 25, minimum: 1, maximum: 200 } },
@@ -70,7 +136,8 @@ const pagingParams = [
   { name: "lang", in: "query", description: "Set to 'ar' to match Arabic-culture names.", schema: { type: "string", enum: ["en", "ar"] } },
 ];
 
-export const openapiSpec = {
+export function buildOpenApiSpec(options: SpecOptions = {}) {
+  return {
   openapi: "3.1.0",
   info: {
     title: "Sijilat API",
@@ -97,7 +164,7 @@ export const openapiSpec = {
         summary: "Search commercial registrations",
         description:
           "At least one filter is required. Name/sector/activity/status/type/nationality/municipality accept friendly names (case-insensitive, comma-separated for multiple) and resolve to codes. Default response is one page; use page/per_page to paginate or all=1 to pull everything.",
-        parameters: [...filterParams, ...pagingParams],
+        parameters: buildSearchParams(options),
         responses: {
           "200": {
             description: "Matching companies",
@@ -169,4 +236,8 @@ export const openapiSpec = {
     },
   },
   components: { schemas: { Company: company, CodeName: codeName, Error: errorSchema } },
-} as const;
+  };
+}
+
+/** Static base spec (no live enums) — the offline fallback when lookups are unreachable. */
+export const openapiSpec = buildOpenApiSpec();

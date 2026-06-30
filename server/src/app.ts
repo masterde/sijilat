@@ -9,7 +9,7 @@ import { SijilatClient, SijilatError, RateLimitError, type SearchFilters } from 
 import { parseDetail } from "./detail.js";
 import { apiReference } from "@scalar/hono-api-reference";
 import { searchActivities, activityTableSize } from "./activities.js";
-import { openapiSpec } from "./openapi.js";
+import { openapiSpec, buildOpenApiSpec } from "./openapi.js";
 
 /** Constant-time string compare that doesn't leak length-mismatch timing. */
 function secretEqual(a: string, b: string): boolean {
@@ -227,7 +227,17 @@ app.get("/lookups/:table", async (c) => {
 // OpenAPI spec + interactive docs. The docs UI is served from the bundled
 // @scalar/hono-api-reference (no external CDN script), so there is no
 // third-party-script / SRI exposure.
-app.get("/openapi.json", (c) => c.json(openapiSpec));
+// Built per-request from the live lookup tables (cached after first call) so the
+// status + municipality filters enumerate every current option; falls back to the
+// static base spec if the registry is unreachable.
+app.get("/openapi.json", async (c) => {
+  try {
+    const lt = await client.lookups();
+    return c.json(buildOpenApiSpec({ status: lt.status, municipalities: lt.municipalities }));
+  } catch {
+    return c.json(openapiSpec);
+  }
+});
 app.get("/docs", apiReference({ spec: { url: "/openapi.json" }, pageTitle: "Sijilat API — Docs" }));
 
 // --- helpers ---------------------------------------------------------------
