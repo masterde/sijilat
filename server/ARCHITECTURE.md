@@ -155,11 +155,13 @@ src/
   ratelimit.ts   adaptive RateLimiter (concurrency + 429 backoff)
   detail.ts      parseDetail(): shapes CompleteCRDetails into a clean profile
   app.ts         Hono routes, API-key middleware, fields projection, pagination,
+                 POST /mcp (stateless Streamable HTTP MCP, JSON responses),
                  sector+status fallback, /docs + /openapi.json
   openapi.ts     OpenAPI 3.1 spec object
   contacts.ts    contact shaping + E.164 phone normalisation (MCP + exporter)
-  mcp.ts         stdio MCP server: search_businesses, get_business_contacts,
-                 find_business_phones, search_activities
+  mcp-server.ts  MCP tool definitions (createMcpServer): search_businesses,
+                 get_business_contacts, find_business_phones, search_activities
+  mcp.ts         stdio entry for the MCP server (bundled into mcp/sijilat-mcp.mjs)
   server.ts      Node entry (@hono/node-server)
   data/isic4.json  141 harvested ISIC4 codes (offline fallback only)
 scripts/

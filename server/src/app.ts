@@ -10,6 +10,8 @@ import { parseDetail } from "./detail.js";
 import { apiReference } from "@scalar/hono-api-reference";
 import { searchActivities, activityTableSize } from "./activities.js";
 import { openapiSpec, buildOpenApiSpec } from "./openapi.js";
+import { WebStandardStreamableHTTPServerTransport } from "@modelcontextprotocol/sdk/server/webStandardStreamableHttp.js";
+import { createMcpServer } from "./mcp-server.js";
 
 /** Constant-time string compare that doesn't leak length-mismatch timing. */
 function secretEqual(a: string, b: string): boolean {
@@ -58,6 +60,7 @@ app.get("/", (c) =>
       "GET /lookups": "all filter code tables",
       "GET /lookups/activity?q=": "search business activities (ISIC4) by name",
       "GET /lookups/:table": "one table: status|type|nationality|sector|municipality",
+      "POST /mcp": "MCP server (Streamable HTTP): business search + phone numbers",
     },
     auth: process.env.SIJILAT_API_KEY ? "x-api-key required (header)" : "open",
   }),
@@ -238,6 +241,24 @@ app.get("/openapi.json", async (c) => {
     return c.json(openapiSpec);
   }
 });
+// MCP over Streamable HTTP, stateless: a fresh server + transport per request
+// (serverless instances share nothing), JSON responses instead of SSE. Shares
+// the process-wide client, so token + lookup caches stay warm. Covered by the
+// x-api-key middleware above when SIJILAT_API_KEY is set.
+app.all("/mcp", async (c) => {
+  const transport = new WebStandardStreamableHTTPServerTransport({
+    sessionIdGenerator: undefined,
+    enableJsonResponse: true,
+  });
+  const server = createMcpServer(client);
+  await server.connect(transport);
+  try {
+    return await transport.handleRequest(c.req.raw);
+  } finally {
+    await server.close();
+  }
+});
+
 app.get("/docs", apiReference({ spec: { url: "/openapi.json" }, pageTitle: "Sijilat API — Docs" }));
 
 // --- helpers ---------------------------------------------------------------

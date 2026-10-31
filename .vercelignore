@@ -6,3 +6,7 @@
 sijilat-pp-cli
 .manuscripts
 .git
+# Never upload local data or env files.
+/server/exports
+.env
+.env*.local

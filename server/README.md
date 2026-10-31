@@ -118,9 +118,10 @@ docker run -p 3000:3000 -e SIJILAT_API_KEY=... sijilat-api
 
 ## MCP server (business search + phone numbers)
 
-`src/mcp.ts` is a stdio [MCP](https://modelcontextprotocol.io) server that lets
-an agent search the registry and pull phone numbers. It calls the registry
-directly through `SijilatClient`, so it doesn't depend on the hosted API.
+An [MCP](https://modelcontextprotocol.io) server that lets an agent search the
+registry and pull phone numbers. The tools live in `src/mcp-server.ts` and are
+served two ways: over HTTP at **`/mcp`** on the deployed API (stateless
+Streamable HTTP), and over stdio by `src/mcp.ts` for local use.
 
 | Tool | What it does |
 |---|---|
@@ -137,9 +138,23 @@ CPR and passport numbers are never returned.
 
 ### Install
 
-**One line (Claude Code, and optionally Claude Desktop).** Needs Node 20+.
-It downloads one self-contained file to `~/.local/share/sijilat-mcp/` and
-registers it. Re-run it to update.
+**Hosted (recommended): nothing to download.**
+
+```bash
+claude mcp add --transport http sijilat https://sijilat-api.vercel.app/mcp
+```
+
+For Claude Desktop or claude.ai, add a custom connector with the URL
+`https://sijilat-api.vercel.app/mcp`. For any other client, configure a
+Streamable HTTP server at the same URL.
+
+The endpoint is **open** (like the rest of the API). To lock it down, set
+`SIJILAT_API_KEY` on Vercel; clients then send the key as a header:
+`claude mcp add ... --header "x-api-key: <key>"`.
+
+**Local (stdio), for offline or self-hosted use.** Needs Node 20+.
+The one-liner downloads one self-contained file to `~/.local/share/sijilat-mcp/`
+and registers it with Claude Code; re-run it to update.
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/HEAD/server/mcp/install.sh | bash
@@ -148,12 +163,11 @@ curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/HEAD/server/mcp/in
 Add `-s -- --desktop` to also write it into Claude Desktop's config (a backup
 is made first), or `-s -- --no-claude` to only download it.
 
-**Claude Desktop, by double-click.** Download
+For Claude Desktop you can also download
 [`mcp/sijilat.mcpb`](https://github.com/masterde/sijilat/raw/HEAD/server/mcp/sijilat.mcpb)
-and open it. Desktop shows an install dialog; no Node setup is needed, because
-Desktop runs it with its built-in Node.
+and double-click it. Desktop runs it with its built-in Node.
 
-**Any other MCP client.** Configure a stdio server with command `node` and
+**Any other MCP client (local).** Configure a stdio server with command `node` and
 argument `<path>/sijilat-mcp.mjs`. The file has no dependencies, so you can
 copy it anywhere.
 
