@@ -116,6 +116,47 @@ docker run -p 3000:3000 -e SIJILAT_API_KEY=... sijilat-api
 ```
 (Fly: `fly launch` picks up the Dockerfile; set the secret with `fly secrets set SIJILAT_API_KEY=...`.)
 
+## MCP server (business search + phone numbers)
+
+`src/mcp.ts` is a stdio [MCP](https://modelcontextprotocol.io) server that lets
+an agent search the registry and pull phone numbers. It calls the registry
+directly through `SijilatClient`, so it doesn't depend on the hosted API.
+
+| Tool | What it does |
+|---|---|
+| `search_businesses` | Filter by name, Arabic name, activity (ISIC4 code or keyword), municipality, block, company type, CR number, status (default `ACTIVE`). Paged. |
+| `get_business_contacts` | One CR/branch: business phone, mobile, fax, email, website, address, plus `owner_contact`. |
+| `find_business_phones` | Search plus contacts for each match in one call (max 25 per page). |
+| `search_activities` | Keyword → ISIC4 codes (single words match best). |
+
+`owner_contact` comes from the CR's latest **GET LICENSE** application
+(amend code `0303`). It's usually the owner's own number, and it often differs
+from the commercial-address number. It's `null` for CRs that never filed one,
+which is typical of old, low-numbered CRs. Phones are normalised to E.164.
+CPR and passport numbers are never returned.
+
+```bash
+npm run build
+claude mcp add sijilat -- node "$(pwd)/dist/mcp.js"     # Claude Code
+# Claude Desktop / others: command "node", args ["<abs path>/server/dist/mcp.js"]
+```
+
+### Bulk export (thousands of businesses)
+
+An MCP call can't enrich thousands of rows, so use the resumable exporter. It
+writes `<out>.jsonl` as it goes (re-run the same command to resume or retry
+errors), then `<out>.csv` (UTF-8 BOM, Excel-safe):
+
+```bash
+npx tsx scripts/export-contacts.mts --activity 5610-1 --block 264 --out exports/5610-1_block-264
+# --status ACTIVE ('' = any)  --municipality ..  --name ..  --limit N  --concurrency 4  --no-owner
+```
+
+Each business costs 3 registry calls (1 with `--no-owner`). Block 264 (140
+branches) takes about 45 s. All active `5610-1` businesses (about 7.3k) would
+take roughly an hour or more. `exports/` is git-ignored because it holds
+personal phone numbers.
+
 ## How it works
 
 The registry authenticates every visitor with a public OAuth *password* grant

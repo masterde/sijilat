@@ -86,6 +86,8 @@ All `/api/*` endpoints return:
 | Company detail | `CRdetails/CompleteCRDetails` | `CR_NO`, `BRANCH_NO` | **Yes** | full profile |
 | Lookup tables | `Common/AdvanceSrch_lookup` | lang flags | **Yes** | `CR_Status_lst`, `Company_Type_lst`, `Nationality_lst`, `Sectorlist`, `Municipality_lst` |
 | **Activity search** | `Activity/SearchActivityAdvancedSearch` | keyword in `ISIC4_NM` | **Yes** | `RSLTDT[]` of `{ISIC4_CD, ISIC4_NM, ISIC4_LNM, ISIC4_ANM, ...}` |
+| Applications per CR | `Application/StatusEnquiry` | `CR_NO` + 25-year date window | **Yes** | array of `{APP_NO, APP_YEAR, APP_SEQ, AMEND_CD, BRANCH_NO, ...}` |
+| Amendment detail | `Application/AmendApplicaitonHistory` (sic) | a full StatusEnquiry row + page params | **Yes** | per-type sections, e.g. `amend_ObtainLic` |
 
 **Status code for ACTIVE** companies is `3103` (referenced when filtering).
 
@@ -117,6 +119,29 @@ ISIC4_ANM (Arabic), ISIC4_LEV, ISIC4_ORI_CD, ...}`. This is the registry's own
 matcher, so `restaurant` returns exactly the codes the official site shows
 (`5610-3`, `5610-4`) — precise, not a broad guess.
 
+### 2.6 Owner contact via the GET LICENSE amendment (recovered 2026-10-31)
+
+The commercial address in `CompleteCRDetails` often carries a shop/office
+number. The owner's own phone is usually on the CR's **GET LICENSE**
+application (amend code `0303`). The public CR page links each amendment to
+`/amendment-information/amendment-information.aspx`, whose script calls
+`Application/AmendApplicaitonHistory` (upstream misspelling) with the amendment
+row merged with its `Application/StatusEnquiry` row.
+
+- **Pass `APP_YEAR` + `APP_SEQ`.** Without them the upstream still returns
+  `200` but fills the type-specific sections from an unrelated application. The
+  phone would then belong to a different business. Always take the row from
+  `StatusEnquiry` (`SijilatClient.applications()`), never build it from
+  `amendhistory` alone.
+- Phones live at `amend_ObtainLic.Proposed_Commercial_Address_New`
+  (`NAT_PHONE_BIS_NM`, `NAT_MOBILE_NM`, `CR_EMAIL`). `amendInformation.crWithoutLic.owner_Info`
+  is the fallback.
+- `commercial_Name_Current` there is the name **at filing time** and may differ
+  from today's name. That's expected, not a mismatch.
+- Responses include applicant/partner **CPR and passport numbers**. Never
+  surface or persist them (`licenseContact()` extracts only phone/fax/email).
+- Old, low-numbered CRs predate online licensing and have no `0303` row.
+
 ---
 
 ## 3. Service architecture
@@ -132,11 +157,15 @@ src/
   app.ts         Hono routes, API-key middleware, fields projection, pagination,
                  sector+status fallback, /docs + /openapi.json
   openapi.ts     OpenAPI 3.1 spec object
+  contacts.ts    contact shaping + E.164 phone normalisation (MCP + exporter)
+  mcp.ts         stdio MCP server: search_businesses, get_business_contacts,
+                 find_business_phones, search_activities
   server.ts      Node entry (@hono/node-server)
   data/isic4.json  141 harvested ISIC4 codes (offline fallback only)
 scripts/
   harvest-isic4.mjs  rebuilds data/isic4.json (offline fallback table)
   dump-openapi.mjs   writes openapi.json from the built spec
+  export-contacts.mts  resumable bulk contact export (JSONL + CSV)
 ```
 
 ### Request flow for `/search?activity=<name>&status=<name>`
@@ -234,6 +263,7 @@ from the repo root and Vercel builds `server/`. After code/spec changes:
 | OpenAPI 3.1 + `/docs` | done |
 | Rate limiting + per-request timeouts | done |
 | Optional header API key | done |
-| Lead-gen / enrichment layer | **not started** (deferred, to be built on top) |
+| MCP server (search + phones, owner contact) | done |
+| Bulk contact export (resumable CSV) | done (script; no HTTP route yet) |
 | Persistent caching / response Cache-Control | not done |
 | Tests | none yet |

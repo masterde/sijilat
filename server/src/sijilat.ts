@@ -62,6 +62,32 @@ export interface LookupTables {
   municipalities: CodeName[];
 }
 
+/** Amend code of the "GET LICENSE" application type. */
+export const GET_LICENSE_AMEND_CD = "0303";
+
+/** One row of Application/StatusEnquiry (subset; upstream sends ~30 fields). */
+export interface ApplicationRow {
+  APP_NO?: string;
+  APP_YEAR?: string;
+  APP_SEQ?: string;
+  AMEND_CD?: string;
+  CR_NO?: string;
+  BRANCH_NO?: string;
+  RECEV_DATE?: string;
+  APP_TYP_LNM?: string;
+  [k: string]: unknown;
+}
+
+export interface LicenseContact {
+  application_no: string;
+  filed_on: string;
+  branch: string;
+  phone: string;
+  mobile: string;
+  fax: string;
+  email: string;
+}
+
 /** Thrown when the API returns HTTP 429. */
 export class RateLimitError extends Error {
   constructor(public url: string) {
@@ -232,6 +258,94 @@ export class SijilatClient {
     );
   }
 
+  /**
+   * All applications filed against a CR (every branch), newest first — the
+   * list the public CR page merges into its amendment history. Rows carry the
+   * APP_YEAR/APP_SEQ that amendmentDetail() needs. Contains applicant CPR_NO;
+   * callers must not surface it.
+   */
+  async applications(crNumber: string): Promise<ApplicationRow[]> {
+    const now = new Date();
+    const from = new Date(now);
+    from.setFullYear(now.getFullYear() - 25);
+    const jd = await this.post(
+      "Application/StatusEnquiry",
+      {
+        START_DATE: ddmmyyyy(from),
+        END_DATE: ddmmyyyy(now),
+        VCR_YN: null,
+        APP_NO: null,
+        CR_NO: crNumber,
+        STATUS: null,
+        CM_TYP_CD: null,
+        AMEND_CD: null,
+        APPCNT_CPR_NO: null,
+        CR_LNM: null,
+        CR_ANM: null,
+        CPR_NO: null,
+        PB_NO: null,
+        cult_lang: "EN",
+        CULT_LANG: "EN",
+        MENU_TYPE: "A",
+      },
+      true,
+    );
+    const rows = Array.isArray(jd) ? (jd as ApplicationRow[]) : [];
+    return rows.sort((a, b) => (b.APP_NO ?? "").localeCompare(a.APP_NO ?? ""));
+  }
+
+  /**
+   * Full record of one amendment application (the site's amendment-information
+   * page). The row MUST come from applications(): without its APP_YEAR/APP_SEQ
+   * the upstream silently returns a different application's sections.
+   * Note the upstream's own misspelling "Applicaiton".
+   */
+  async amendmentDetail(row: ApplicationRow): Promise<any> {
+    return this.post(
+      "Application/AmendApplicaitonHistory",
+      {
+        ...row,
+        amend_cd: row.AMEND_CD,
+        app_no: row.APP_NO,
+        ref_yn: "Y",
+        page_type: "PG",
+        cr_no: row.CR_NO,
+        branch_no: row.BRANCH_NO || "1",
+        URL: "amd_info",
+        hidehf: "true",
+        cult_lang: "EN",
+        CULT_LANG: "EN",
+        MENU_TYPE: "A",
+      },
+      true,
+    );
+  }
+
+  /**
+   * Owner contact captured on the CR's most recent GET LICENSE application
+   * (amend code 0303) — usually the owner's own phone/mobile, which the
+   * current commercial address often doesn't carry. Prefers the given branch,
+   * else any branch of the CR. Returns null when the CR has no such filing.
+   */
+  async licenseContact(crNumber: string, branch = "1"): Promise<LicenseContact | null> {
+    const lic = (await this.applications(crNumber)).filter((r) => r.AMEND_CD === GET_LICENSE_AMEND_CD);
+    const row = lic.find((r) => r.BRANCH_NO === branch) ?? lic[0];
+    if (!row) return null;
+    const jd = await this.amendmentDetail(row);
+    const a = jd?.amend_ObtainLic?.Proposed_Commercial_Address_New ?? {};
+    const o = jd?.amendInformation?.crWithoutLic?.owner_Info ?? {};
+    const str = (v: unknown) => (typeof v === "string" ? v.trim() : "");
+    return {
+      application_no: row.APP_NO ?? "",
+      filed_on: str(jd?.RECEV_DATE) || row.RECEV_DATE || "",
+      branch: row.BRANCH_NO ?? "",
+      phone: str(a.NAT_PHONE_BIS_NM) || str(a.CR_PHONE_BIS) || str(o.PHONE),
+      mobile: str(a.NAT_MOBILE_NM) || str(a.CR_MOBILE) || str(o.MOBILE),
+      fax: str(a.NAT_FAX_NM) || str(a.CR_FAX) || str(o.FAX),
+      email: str(a.CR_EMAIL) || str(o.EMAIL),
+    };
+  }
+
   async lookups(): Promise<LookupTables> {
     if (this.lookupsCache) return this.lookupsCache;
     const jd = (await this.post(
@@ -344,6 +458,10 @@ function toInt(v: unknown): number {
     return Number.isNaN(n) ? 0 : n;
   }
   return 0;
+}
+
+function ddmmyyyy(d: Date): string {
+  return `${String(d.getDate()).padStart(2, "0")}-${String(d.getMonth() + 1).padStart(2, "0")}-${d.getFullYear()}`;
 }
 
 function rowToCompany(r: any): Company {

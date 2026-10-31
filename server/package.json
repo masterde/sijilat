@@ -8,12 +8,16 @@
     "dev": "tsx watch src/server.ts",
     "build": "tsc -p tsconfig.json",
     "start": "node dist/server.js",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "mcp": "tsx src/mcp.ts",
+    "mcp:start": "node dist/mcp.js"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
+    "@modelcontextprotocol/sdk": "^1.32.2",
     "@scalar/hono-api-reference": "^0.5.165",
-    "hono": "^4.6.14"
+    "hono": "^4.6.14",
+    "zod": "^4.6.7"
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
