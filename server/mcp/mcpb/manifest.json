@@ -1,0 +1,23 @@
+{
+  "manifest_version": "0.4",
+  "name": "sijilat",
+  "display_name": "Sijilat (Bahrain business registry)",
+  "version": "0.0.0",
+  "description": "Search Bahrain's Sijilat commercial registry and get business and owner phone numbers.",
+  "long_description": "Searches the Sijilat commercial registry by name, activity (ISIC4 code or keyword), municipality, block or company type, and returns contacts: business phone, mobile, fax, email, website, address, plus the owner's phone from the CR's latest GET LICENSE application. Phones are normalised to E.164. No API key needed.",
+  "author": { "name": "masterde" },
+  "repository": { "type": "git", "url": "https://github.com/masterde/sijilat" },
+  "keywords": ["bahrain", "sijilat", "commercial registry", "business search", "phone numbers"],
+  "server": {
+    "type": "node",
+    "entry_point": "server/sijilat-mcp.mjs",
+    "mcp_config": { "command": "node", "args": ["${__dirname}/server/sijilat-mcp.mjs"] }
+  },
+  "tools": [
+    { "name": "search_businesses", "description": "Search the registry by name, activity, municipality, block, type or CR number." },
+    { "name": "get_business_contacts", "description": "Phone, mobile, email, address and owner contact for one CR/branch." },
+    { "name": "find_business_phones", "description": "Search and return contacts for each match in one call." },
+    { "name": "search_activities", "description": "Look up ISIC4 activity codes for a keyword." }
+  ],
+  "compatibility": { "platforms": ["darwin", "win32", "linux"], "runtimes": { "node": ">=20.0.0" } }
+}

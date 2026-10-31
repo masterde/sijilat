@@ -166,6 +166,12 @@ scripts/
   harvest-isic4.mjs  rebuilds data/isic4.json (offline fallback table)
   dump-openapi.mjs   writes openapi.json from the built spec
   export-contacts.mts  resumable bulk contact export (JSONL + CSV)
+  bundle-mcp.mjs     bundles src/mcp.ts -> mcp/sijilat-mcp.mjs + mcp/sijilat.mcpb
+mcp/
+  sijilat-mcp.mjs    COMMITTED build output: dependency-free MCP server (raw-URL install)
+  sijilat.mcpb       COMMITTED build output: Claude Desktop extension
+  install.sh         curl | bash installer (Claude Code / Desktop registration)
+  mcpb/manifest.json extension manifest (version stamped from package.json)
 ```
 
 ### Request flow for `/search?activity=<name>&status=<name>`

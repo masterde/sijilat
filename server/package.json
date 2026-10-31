@@ -10,7 +10,8 @@
     "start": "node dist/server.js",
     "typecheck": "tsc -p tsconfig.json --noEmit",
     "mcp": "tsx src/mcp.ts",
-    "mcp:start": "node dist/mcp.js"
+    "mcp:start": "node dist/mcp.js",
+    "bundle:mcp": "node scripts/bundle-mcp.mjs"
   },
   "dependencies": {
     "@hono/node-server": "^1.13.7",
@@ -21,6 +22,7 @@
   },
   "devDependencies": {
     "@types/node": "^22.10.2",
+    "esbuild": "^0.28.1",
     "tsx": "^4.19.2",
     "typescript": "^5.7.2"
   },

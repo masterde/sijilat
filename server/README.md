@@ -135,11 +135,41 @@ from the commercial-address number. It's `null` for CRs that never filed one,
 which is typical of old, low-numbered CRs. Phones are normalised to E.164.
 CPR and passport numbers are never returned.
 
+### Install
+
+**One line (Claude Code, and optionally Claude Desktop).** Needs Node 20+.
+It downloads one self-contained file to `~/.local/share/sijilat-mcp/` and
+registers it. Re-run it to update.
+
 ```bash
-npm run build
-claude mcp add sijilat -- node "$(pwd)/dist/mcp.js"     # Claude Code
-# Claude Desktop / others: command "node", args ["<abs path>/server/dist/mcp.js"]
+curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/HEAD/server/mcp/install.sh | bash
 ```
+
+Add `-s -- --desktop` to also write it into Claude Desktop's config (a backup
+is made first), or `-s -- --no-claude` to only download it.
+
+**Claude Desktop, by double-click.** Download
+[`mcp/sijilat.mcpb`](https://github.com/masterde/sijilat/raw/HEAD/server/mcp/sijilat.mcpb)
+and open it. Desktop shows an install dialog; no Node setup is needed, because
+Desktop runs it with its built-in Node.
+
+**Any other MCP client.** Configure a stdio server with command `node` and
+argument `<path>/sijilat-mcp.mjs`. The file has no dependencies, so you can
+copy it anywhere.
+
+There's nothing to configure: the registry uses public auth, so no API key is
+needed.
+
+### Releasing a new version
+
+`mcp/sijilat-mcp.mjs` and `mcp/sijilat.mcpb` are build outputs that are
+committed so the URLs above work. After changing anything under `src/`:
+
+```bash
+npm run bundle:mcp    # rebuilds both; bump "version" in package.json first
+```
+
+For local development without bundling, use `npm run mcp` (it runs via tsx).
 
 ### Bulk export (thousands of businesses)
 
