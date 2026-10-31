@@ -88,8 +88,11 @@ const cols = [
   "owner_phone", "owner_mobile", "owner_email", "owner_application_no", "owner_filed_on", "error",
 ];
 const cell = (v: unknown) => {
-  const s = v == null ? "" : String(v);
-  return /[",\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+  let s = v == null ? "" : String(v);
+  // Registry text is user-entered: neutralise spreadsheet formulas (=, +, -, @,
+  // tab, CR). Normalised E.164 phones ("+973...") are left dialable.
+  if (/^[=+\-@\t\r]/.test(s) && !/^\+\d+$/.test(s)) s = "'" + s;
+  return /[",\n\r]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 };
 const lines = [cols.join(",")];
 for (const r of latest.values()) {
