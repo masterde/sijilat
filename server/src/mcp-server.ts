@@ -68,9 +68,30 @@ const summarize = (c: Company) => ({
   activities: c.activities,
 });
 
+// Sent to every client on connect (hosted and stdio alike), so it must stay
+// short. The full playbook is the `sijilat` skill (mcp/skill/sijilat/SKILL.md).
+export const MCP_INSTRUCTIONS = `Bahrain's Sijilat commercial registry: find businesses and their phone numbers.
+
+Workflow:
+1. Searching by business type? Call search_activities first (single English words match best:
+   "bakery", "rental") and pass the exact ISIC4 code(s) as \`activity\`, e.g. "5610-1".
+2. Check the count with search_businesses (cheap). Narrow with block / municipality if it's large.
+3. Get phones with find_business_phones, 25 per page, using \`page\` to continue while has_more.
+   Each business costs ~3 registry calls; for more than ~200 businesses, recommend the bulk
+   exporter (server/scripts/export-contacts.mts in github.com/masterde/sijilat) instead.
+4. For one known business, use get_business_contacts(cr_number, branch).
+
+Reading results:
+- Each row is one branch (cr_number + branch). Branches of one CR usually share phones:
+  de-duplicate by cr_number before presenting a call list.
+- phone/mobile are the business's registered contacts; owner_contact is the number on the CR's
+  latest GET LICENSE filing, usually the owner's personal phone. Label them separately.
+- owner_contact: null means the CR never filed one (typical of old, low-numbered CRs), not an error.
+- status defaults to ACTIVE; pass status "" to include all statuses.`;
+
 /** A fresh MCP server exposing the Sijilat tools, backed by `client`. */
 export function createMcpServer(client: SijilatClient): McpServer {
-  const server = new McpServer({ name: "sijilat", version: MCP_VERSION });
+  const server = new McpServer({ name: "sijilat", version: MCP_VERSION }, { instructions: MCP_INSTRUCTIONS });
   const readOnly = { readOnlyHint: true, openWorldHint: true };
 
   server.registerTool(

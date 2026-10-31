@@ -159,7 +159,7 @@ src/
                  sector+status fallback, /docs + /openapi.json
   openapi.ts     OpenAPI 3.1 spec object
   contacts.ts    contact shaping + E.164 phone normalisation (MCP + exporter)
-  mcp-server.ts  MCP tool definitions (createMcpServer): search_businesses,
+  mcp-server.ts  MCP tool definitions + MCP_INSTRUCTIONS (createMcpServer): search_businesses,
                  get_business_contacts, find_business_phones, search_activities
   mcp.ts         stdio entry for the MCP server (bundled into mcp/sijilat-mcp.mjs)
   server.ts      Node entry (@hono/node-server)
@@ -172,7 +172,9 @@ scripts/
 mcp/
   sijilat-mcp.mjs    COMMITTED build output: dependency-free MCP server (raw-URL install)
   sijilat.mcpb       COMMITTED build output: Claude Desktop extension
-  install.sh         curl | bash installer (Claude Code / Desktop registration)
+  install.sh         curl | bash installer: hosted server (default) or --local stdio,
+                     plus the skill; --desktop for Claude Desktop (local only)
+  skill/sijilat/SKILL.md  agent playbook for the tools (installed to ~/.claude/skills)
   mcpb/manifest.json extension manifest (version stamped from package.json)
 ```
 

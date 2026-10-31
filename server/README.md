@@ -138,30 +138,44 @@ CPR and passport numbers are never returned.
 
 ### Install
 
-**Hosted (recommended): nothing to download.**
-
-```bash
-claude mcp add --transport http sijilat https://sijilat-api.vercel.app/mcp
-```
-
-For Claude Desktop or claude.ai, add a custom connector with the URL
-`https://sijilat-api.vercel.app/mcp`. For any other client, configure a
-Streamable HTTP server at the same URL.
-
-The endpoint is **open** (like the rest of the API). To lock it down, set
-`SIJILAT_API_KEY` on Vercel; clients then send the key as a header:
-`claude mcp add ... --header "x-api-key: <key>"`.
-
-**Local (stdio), for offline or self-hosted use.** Needs Node 20+.
-The one-liner downloads one self-contained file to `~/.local/share/sijilat-mcp/`
-and registers it with Claude Code; re-run it to update.
+**Claude Code: one line, hosted server + skill.**
 
 ```bash
 curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/HEAD/server/mcp/install.sh | bash
 ```
 
-Add `-s -- --desktop` to also write it into Claude Desktop's config (a backup
-is made first), or `-s -- --no-claude` to only download it.
+This registers the hosted server (`https://sijilat-api.vercel.app/mcp`, user
+scope) and installs the **`sijilat` skill** to `~/.claude/skills/sijilat/`. The
+skill is the playbook: resolve activity codes first, page 25 at a time,
+de-duplicate branches, business vs owner numbers, and when to switch to the
+bulk exporter. Re-run the command to update. Flags: `--no-skill`, `--no-claude`.
+
+To add just the server without the skill:
+
+```bash
+claude mcp add --transport http sijilat https://sijilat-api.vercel.app/mcp
+```
+
+The server also sends a short version of that guidance as MCP `instructions`
+when a client connects, so agents get the basics even without the skill.
+
+**Claude Desktop / claude.ai.** Add a custom connector with the URL
+`https://sijilat-api.vercel.app/mcp`. Other clients: a Streamable HTTP server
+at the same URL.
+
+The endpoint is **open** (like the rest of the API). To lock it down, set
+`SIJILAT_API_KEY` on Vercel; clients then send the key as a header:
+`claude mcp add ... --header "x-api-key: <key>"`.
+
+**Local (stdio), for offline or self-hosted use.** Needs Node 20+. Add
+`--local` to the one-liner: it downloads one self-contained file to
+`~/.local/share/sijilat-mcp/` and registers that instead, plus the skill. Add
+`--desktop` as well to write the local server into Claude Desktop's config
+(a backup is made first).
+
+```bash
+curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/HEAD/server/mcp/install.sh | bash -s -- --local
+```
 
 For Claude Desktop you can also download
 [`mcp/sijilat.mcpb`](https://github.com/masterde/sijilat/raw/HEAD/server/mcp/sijilat.mcpb)
@@ -177,13 +191,17 @@ needed.
 ### Releasing a new version
 
 `mcp/sijilat-mcp.mjs` and `mcp/sijilat.mcpb` are build outputs that are
-committed so the URLs above work. After changing anything under `src/`:
+committed so the URLs above work. Pushing to `feat/nodejs-api` deploys the
+hosted server automatically (the Vercel project is connected to the repo).
+After changing anything under `src/`:
 
 ```bash
 npm run bundle:mcp    # rebuilds both; bump "version" in package.json first
 ```
 
 For local development without bundling, use `npm run mcp` (it runs via tsx).
+When tool behaviour changes, update both `MCP_INSTRUCTIONS` in
+`src/mcp-server.ts` and the skill at `mcp/skill/sijilat/SKILL.md`.
 
 ### Bulk export (thousands of businesses)
 
