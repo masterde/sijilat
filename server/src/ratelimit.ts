@@ -101,6 +101,10 @@ export class RateLimiter {
     this.nextAt = slot + this.interval;
     const wait = slot - now + this.backoff;
     if (wait > 0) await sleep(wait);
+    // The breaker may have tripped while this call sat in the spacing queue
+    // (a concurrent call got the 403). Don't let queued calls go out after it.
+    // Only the open check: the half-open side effects belong to checkBreaker().
+    if (Date.now() < this.openUntil) throw new RegistryBlockedError(this.openUntil - Date.now());
   }
 
   private checkBreaker(): void {

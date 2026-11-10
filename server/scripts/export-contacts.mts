@@ -66,11 +66,17 @@ const limit = opt.limit ? Number(opt.limit) : Infinity;
 
 // 1. Collect the full match list (cheap: one call per page).
 const matches: Company[] = [];
-for (let page = 1; matches.length < limit; page++) {
-  const { results, total } = await client.search(filters, { page, perPage });
-  if (page === 1) console.error(`matches: ${total}`);
-  matches.push(...results);
-  if (results.length < perPage) break;
+try {
+  for (let page = 1; matches.length < limit; page++) {
+    const { results, total } = await client.search(filters, { page, perPage });
+    if (page === 1) console.error(`matches: ${total}`);
+    matches.push(...results);
+    if (results.length < perPage) break;
+  }
+} catch (e) {
+  if (!isUpstreamStop(e)) throw e;
+  console.error(`stopped while listing matches: ${e.message}. Re-run the same command later.`);
+  process.exit(3);
 }
 const todo = matches.slice(0, limit).filter((c) => !done.has(key(c.cr_number, c.branch)));
 console.error(`already exported: ${done.size}, to fetch: ${todo.length}`);

@@ -79,6 +79,27 @@ app.get("/", (c) =>
 // calling upstream at all.
 const HEALTH_TTL_MS = 30_000;
 let healthCache: { at: number; ok: boolean; error?: string } | null = null;
+// One shared refresh: concurrent /health calls during a refresh await the same
+// ping instead of each spending upstream budget (it's a public endpoint).
+let healthInflight: Promise<void> | null = null;
+
+function refreshHealth(): Promise<void> {
+  healthInflight ??= client
+    .ping()
+    .then(
+      () => {
+        healthCache = { at: Date.now(), ok: true };
+      },
+      (err) => {
+        // A breaker trip during the ping is reported as blocked by the caller.
+        healthCache = { at: Date.now(), ok: false, error: errMessage(err) };
+      },
+    )
+    .finally(() => {
+      healthInflight = null;
+    });
+  return healthInflight;
+}
 
 app.get("/health", async (c) => {
   const up = client.upstreamStatus();
@@ -86,15 +107,8 @@ app.get("/health", async (c) => {
     c.header("Retry-After", String(up.retry_after_s));
     return c.json({ ok: false, registry: "blocked", ...up }, 503);
   }
-  if (!healthCache || Date.now() - healthCache.at > HEALTH_TTL_MS) {
-    try {
-      await client.ping();
-      healthCache = { at: Date.now(), ok: true };
-    } catch (err) {
-      // A breaker trip during the ping is reported as blocked below.
-      healthCache = { at: Date.now(), ok: false, error: errMessage(err) };
-    }
-  }
+  if (!healthCache || Date.now() - healthCache.at > HEALTH_TTL_MS) await refreshHealth();
+  if (!healthCache) return c.json({ ok: false, registry: "unknown" }, 503);
   const now = client.upstreamStatus();
   const checked_s_ago = Math.round((Date.now() - healthCache.at) / 1000);
   if (now.blocked) {
