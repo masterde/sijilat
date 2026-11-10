@@ -2,7 +2,9 @@
 // lookup tables, and name->code filter resolution. Ported from the Go CLI.
 
 import { encryptBody, tokenPassword, TOKEN_USERNAME } from "./crypto.js";
-import { RateLimiter } from "./ratelimit.js";
+import { RateLimiter, RegistryBlockedError, type LimitOptions } from "./ratelimit.js";
+
+export { RegistryBlockedError, UpstreamBudgetError, isUpstreamStop } from "./ratelimit.js";
 import { resolveActivityNames } from "./activities.js";
 
 const DEFAULT_BASE_URL = "https://api.sijilat.bh/api/";
@@ -115,9 +117,11 @@ export class SijilatClient {
   private inflightToken: Promise<string> | null = null;
   // Cache live activity-search results per lowercased keyword (process-lifetime).
   private activityCache = new Map<string, CodeName[]>();
-  private readonly limiter = new RateLimiter(6);
+  private readonly limiter: RateLimiter;
 
-  constructor(baseUrl = process.env.SIJILAT_BASE_URL || DEFAULT_BASE_URL) {
+  /** `limits` overrides the env/default upstream limits (see ratelimit.ts). */
+  constructor(baseUrl = process.env.SIJILAT_BASE_URL || DEFAULT_BASE_URL, limits: Partial<LimitOptions> = {}) {
+    this.limiter = new RateLimiter(limits);
     if (!baseUrl.endsWith("/")) baseUrl += "/";
     this.baseUrl = baseUrl;
     const u = new URL(baseUrl);
@@ -148,6 +152,7 @@ export class SijilatClient {
         this.limiter.onRateLimit();
         throw new RateLimitError(this.tokenUrl);
       }
+      if (resp.status === 403) throw this.blocked();
       if (!resp.ok) throw new SijilatError(`token endpoint returned HTTP ${resp.status}`, resp.status);
       this.limiter.onSuccess();
       const data = (await resp.json()) as { access_token?: string; expires_in?: number };
@@ -189,6 +194,7 @@ export class SijilatClient {
       this.limiter.onRateLimit();
       throw new RateLimitError(this.baseUrl + path);
     }
+    if (resp.status === 403) throw this.blocked();
     if (!resp.ok) throw new SijilatError(`POST ${path} returned HTTP ${resp.status}`, resp.status);
     this.limiter.onSuccess();
     const env = (await resp.json()) as {
@@ -202,6 +208,25 @@ export class SijilatClient {
       throw new SijilatError(`API error on ${path}: status ${env.Status_Code}: ${msg}`, Number(env.Status_Code));
     }
     return env.jsonData;
+  }
+
+  /** 403 = the registry is refusing this IP: open the breaker and fail fast. */
+  private blocked(): RegistryBlockedError {
+    this.limiter.trip();
+    return new RegistryBlockedError(this.limiter.opts.cooldownMs);
+  }
+
+  /** Breaker state + rolling-minute budget usage, for /health. */
+  upstreamStatus() {
+    return this.limiter.status();
+  }
+
+  /**
+   * One real, uncached registry round-trip (a 1-row CR search), for health
+   * checks. lookups() is cached per process, so it can't detect a block.
+   */
+  async ping(): Promise<void> {
+    await this.search({ crNumber: "1" }, { perPage: 1 });
   }
 
   async search(

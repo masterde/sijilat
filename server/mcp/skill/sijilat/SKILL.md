@@ -76,6 +76,20 @@ for the count → `find_business_phones({activity, block: "264", limit: 25, only
 `get_business_contacts({cr_number: "12345"})` and report `owner_contact`. This server
 doesn't return owner names; it returns contacts only.
 
+## Limits: never hammer the registry
+
+The server caps its registry traffic (about 120 calls/min) and opens a circuit
+breaker when the registry starts refusing it (HTTP 403). A burst of ~900 calls
+in 3 minutes once got the hosted server's IP blocked for every user.
+
+- If a tool says **"the registry is refusing requests"** or **"budget
+  exhausted"**, or a result has **`stopped_early`**: stop, tell the user, and
+  give them the retry time. Never retry in a loop; that extends blocks.
+- Page `find_business_phones` sequentially, never in parallel. Leave a few
+  seconds between pages on big jobs.
+- For hundreds of businesses or more, use the exporter: it paces itself and
+  resumes after a stop.
+
 ## Gotchas
 
 - Don't search by sector together with a status filter: the registry hangs on that

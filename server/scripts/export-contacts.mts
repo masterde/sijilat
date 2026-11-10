@@ -5,13 +5,16 @@
 //
 //   npx tsx scripts/export-contacts.mts --activity 5610-1 --out exports/5610-1
 //   options: --block 264  --status ACTIVE ('' = any)  --limit N  --concurrency 4  --no-owner
+//            --per-minute 120 (registry calls per rolling minute; raise with care)
 //
-// Cost: 1 detail call per business, +2 with owner lookup (the default).
+// Cost: 1 detail call per business, +2 with owner lookup (the default). At the
+// default 120 calls/min that's ~40 businesses/min with owners. If the registry
+// starts refusing requests (403) the run stops; re-run later to resume.
 
 import { appendFileSync, existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { dirname } from "node:path";
 import { parseArgs } from "node:util";
-import { SijilatClient, type Company } from "../src/sijilat.js";
+import { SijilatClient, isUpstreamStop, type Company } from "../src/sijilat.js";
 import { getContacts, mapLimit, type Contacts } from "../src/contacts.js";
 
 const { values: opt } = parseArgs({
@@ -24,6 +27,7 @@ const { values: opt } = parseArgs({
     out: { type: "string" },
     limit: { type: "string" },
     concurrency: { type: "string", default: "4" },
+    "per-minute": { type: "string" },
     "per-page": { type: "string", default: "100" },
     "no-owner": { type: "boolean", default: false },
   },
@@ -33,7 +37,11 @@ if (!opt.out || !(opt.activity || opt.name || opt.municipality || opt.block)) {
   process.exit(2);
 }
 
-const client = new SijilatClient();
+// Batch job: wait as long as needed for budget instead of failing calls.
+const client = new SijilatClient(undefined, {
+  maxWaitMs: Infinity,
+  ...(opt["per-minute"] && { perMinute: Number(opt["per-minute"]) }),
+});
 const jsonlPath = `${opt.out}.jsonl`;
 const csvPath = `${opt.out}.csv`;
 mkdirSync(dirname(jsonlPath), { recursive: true });
@@ -69,11 +77,18 @@ console.error(`already exported: ${done.size}, to fetch: ${todo.length}`);
 
 // 2. Enrich with bounded concurrency, appending each row as it lands.
 let n = 0;
+let stopped: Error | undefined;
 await mapLimit(todo, Number(opt.concurrency), async (c) => {
+  if (stopped) return;
   let row: object;
   try {
     row = await getContacts(client, c.cr_number, c.branch || "1", !opt["no-owner"]);
   } catch (e) {
+    // Registry refusing us: stop without writing error rows; a re-run resumes.
+    if (isUpstreamStop(e)) {
+      stopped ??= e;
+      return;
+    }
     row = { cr_number: c.cr_number, branch: c.branch, name_en: c.name_en, error: e instanceof Error ? e.message : String(e) };
   }
   appendFileSync(jsonlPath, JSON.stringify(row) + "\n");
@@ -110,3 +125,7 @@ for (const r of latest.values()) {
 writeFileSync(csvPath, "﻿" + lines.join("\n") + "\n"); // BOM so Excel reads the Arabic names
 const errors = [...latest.values()].filter((r) => r.error).length;
 console.error(`wrote ${latest.size} rows to ${csvPath}${errors ? ` (${errors} errors — re-run to retry)` : ""}`);
+if (stopped) {
+  console.error(`stopped early after ${n}/${todo.length}: ${stopped.message}. Re-run the same command later to resume.`);
+  process.exit(3);
+}

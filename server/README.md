@@ -188,6 +188,40 @@ copy it anywhere.
 There's nothing to configure: the registry uses public auth, so no API key is
 needed.
 
+### Upstream limits (protecting the registry, and this server's IP)
+
+On 2026-10-31 one client's burst through the hosted server (~900 registry
+calls in 3 minutes) got Vercel's IP blocked by the registry (HTTP 403 on every
+call, for every user). The client now guards all registry traffic
+(`src/ratelimit.ts`):
+
+| Guard | Default | Env var |
+|---|---|---|
+| Request spacing | 4 calls/s | `SIJILAT_UPSTREAM_PER_SECOND` |
+| Rolling budget | 120 calls/min | `SIJILAT_UPSTREAM_PER_MINUTE` |
+| Max wait for budget before failing | 5 s (hosted), 60 s (local MCP), unlimited (exporter) | `SIJILAT_UPSTREAM_MAX_WAIT_MS` |
+| Breaker cooldown after a 403 | 15 min | `SIJILAT_BLOCK_COOLDOWN_S` |
+
+- **A 403 opens a circuit breaker.** For the cooldown, every call fails fast
+  without touching the registry (HTTP API: `503 registry_blocked` with
+  `Retry-After`; MCP: a clear "do not retry in a loop" error). Afterwards one
+  probe call decides whether to close it.
+- **Budget exhausted** → `429 upstream_budget` with `Retry-After`.
+- `find_business_phones` stops a page at the first block and returns the rows
+  it already has, with `stopped_early`. The exporter stops the run (exit 3)
+  without writing error rows, so re-running resumes.
+- **`/health` makes a real registry call**, a 1-row search cached for 30 s. It
+  reports `reachable`, `unreachable` or `blocked`, plus breaker state and
+  budget usage. (It used to read cached lookups, which is why it said
+  "reachable" during the block.)
+
+The thresholds are guesses: about 300 calls/min sustained got blocked, while
+about 420 calls in 45 s from one machine did not. The guards are **per
+process**. On Vercel that means per instance; Fluid Compute reuses instances,
+so one bursting client mostly hits the same one, but it isn't a global
+guarantee. If blocks recur, move the budget and breaker into shared state
+(e.g. Redis).
+
 ### Releasing a new version
 
 `mcp/sijilat-mcp.mjs` and `mcp/sijilat.mcpb` are build outputs that are
@@ -211,13 +245,15 @@ errors), then `<out>.csv` (UTF-8 BOM, Excel-safe):
 
 ```bash
 npx tsx scripts/export-contacts.mts --activity 5610-1 --block 264 --out exports/5610-1_block-264
-# --status ACTIVE ('' = any)  --municipality ..  --name ..  --limit N  --concurrency 4  --no-owner
+# --status ACTIVE ('' = any)  --municipality ..  --name ..  --limit N  --concurrency 4  --no-owner  --per-minute 120
 ```
 
-Each business costs 3 registry calls (1 with `--no-owner`). Block 264 (140
-branches) takes about 45 s. All active `5610-1` businesses (about 7.3k) would
-take roughly an hour or more. `exports/` is git-ignored because it holds
-personal phone numbers.
+Each business costs 3 registry calls (1 with `--no-owner`), paced to the
+120 calls/min budget: about 40 businesses a minute. Block 264 (140 branches)
+takes about 3.5 min, and all active `5610-1` businesses (about 7.3k) about 3
+hours (or about 1 hour with `--no-owner`). Raise `--per-minute` only with care
+(see *Upstream limits*). `exports/` is git-ignored because it holds personal
+phone numbers.
 
 ## How it works
 

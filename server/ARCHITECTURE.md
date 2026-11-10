@@ -152,7 +152,8 @@ src/
   sijilat.ts     SijilatClient: token cache, search/searchAll, detail, lookups,
                  searchActivitiesLive, filter name->code resolution, RateLimiter use
   activities.ts  OFFLINE fallback: bundled ISIC4 table + synonym ALIASES + stemming
-  ratelimit.ts   adaptive RateLimiter (concurrency + 429 backoff)
+  ratelimit.ts   upstream guard: per-second spacing, rolling per-minute budget,
+                 403 circuit breaker (RegistryBlockedError / UpstreamBudgetError)
   detail.ts      parseDetail(): shapes CompleteCRDetails into a clean profile
   app.ts         Hono routes, API-key middleware, fields projection, pagination,
                  POST /mcp (stateless Streamable HTTP MCP, JSON responses),
@@ -206,7 +207,12 @@ mcp/
   reports `source: "live" | "offline_fallback"`.
 - **Every upstream fetch has `AbortSignal.timeout(25s)`** — global `fetch` has no
   default timeout and a stalled connection would hang the serverless function.
-- **RateLimiter** (`ratelimit.ts`) caps concurrency and backs off on 429s.
+- **Upstream guard** (`ratelimit.ts`): spacing (4/s), rolling budget
+  (120/min), and a circuit breaker that opens for 15 min on a 403. The registry
+  IP-blocked Vercel after ~900 calls in 3 min (2026-10-31); a 403 means stop,
+  not retry. All env-tunable; state is per process (per Vercel instance).
+- **`/health` calls the registry for real** (`client.ping()`, 1-row search,
+  30 s cache). Cached `lookups()` can't detect a block.
 - **API key (optional):** when `SIJILAT_API_KEY` is set, an `x-api-key` **header**
   is required (constant-time compare via `timingSafeEqual`; never a query param,
   so it can't leak into logs/URLs). `/`, `/health`, `/docs`, `/openapi.json` stay

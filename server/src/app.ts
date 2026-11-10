@@ -5,7 +5,14 @@ import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";
 import { timingSafeEqual } from "node:crypto";
-import { SijilatClient, SijilatError, RateLimitError, type SearchFilters } from "./sijilat.js";
+import {
+  SijilatClient,
+  SijilatError,
+  RateLimitError,
+  RegistryBlockedError,
+  UpstreamBudgetError,
+  type SearchFilters,
+} from "./sijilat.js";
 import { parseDetail } from "./detail.js";
 import { apiReference } from "@scalar/hono-api-reference";
 import { searchActivities, activityTableSize } from "./activities.js";
@@ -66,14 +73,38 @@ app.get("/", (c) =>
   }),
 );
 
+// /health makes one real registry call (a 1-row search), cached for 30 s:
+// it's a public endpoint, so uncached probes would let anyone spend the
+// upstream budget. While the breaker is open it reports "blocked" without
+// calling upstream at all.
+const HEALTH_TTL_MS = 30_000;
+let healthCache: { at: number; ok: boolean; error?: string } | null = null;
+
 app.get("/health", async (c) => {
-  try {
-    // A cheap reachability check: fetch lookups (also warms the token cache).
-    const lt = await client.lookups();
-    return c.json({ ok: true, registry: "reachable", status_codes: lt.status.length });
-  } catch (err) {
-    return c.json({ ok: false, registry: "unreachable", error: errMessage(err) }, 503);
+  const up = client.upstreamStatus();
+  if (up.blocked) {
+    c.header("Retry-After", String(up.retry_after_s));
+    return c.json({ ok: false, registry: "blocked", ...up }, 503);
   }
+  if (!healthCache || Date.now() - healthCache.at > HEALTH_TTL_MS) {
+    try {
+      await client.ping();
+      healthCache = { at: Date.now(), ok: true };
+    } catch (err) {
+      // A breaker trip during the ping is reported as blocked below.
+      healthCache = { at: Date.now(), ok: false, error: errMessage(err) };
+    }
+  }
+  const now = client.upstreamStatus();
+  const checked_s_ago = Math.round((Date.now() - healthCache.at) / 1000);
+  if (now.blocked) {
+    c.header("Retry-After", String(now.retry_after_s));
+    return c.json({ ok: false, registry: "blocked", ...now, checked_s_ago }, 503);
+  }
+  if (!healthCache.ok) {
+    return c.json({ ok: false, registry: "unreachable", error: healthCache.error, ...now, checked_s_ago }, 503);
+  }
+  return c.json({ ok: true, registry: "reachable", ...now, checked_s_ago });
 });
 
 app.get("/search", async (c) => {
@@ -342,6 +373,14 @@ async function handle(c: any, fn: () => Promise<unknown> | unknown) {
   try {
     return c.json((await fn()) as object);
   } catch (err) {
+    if (err instanceof RegistryBlockedError) {
+      c.header("Retry-After", String(Math.ceil(err.retryAfterMs / 1000)));
+      return c.json({ error: "registry_blocked", message: err.message, retry_after_s: Math.ceil(err.retryAfterMs / 1000) }, 503);
+    }
+    if (err instanceof UpstreamBudgetError) {
+      c.header("Retry-After", String(Math.ceil(err.retryAfterMs / 1000)));
+      return c.json({ error: "upstream_budget", message: err.message, retry_after_s: Math.ceil(err.retryAfterMs / 1000) }, 429);
+    }
     if (err instanceof RateLimitError) {
       return c.json({ error: "rate_limited", message: err.message }, 429);
     }

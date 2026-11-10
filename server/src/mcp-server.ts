@@ -3,7 +3,7 @@
 
 import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { z } from "zod";
-import type { Company, SearchFilters, SijilatClient } from "./sijilat.js";
+import { isUpstreamStop, type Company, type SearchFilters, type SijilatClient } from "./sijilat.js";
 import { getContacts, hasAnyPhone, mapLimit } from "./contacts.js";
 
 export const MCP_VERSION = "0.1.0";
@@ -87,7 +87,11 @@ Reading results:
 - phone/mobile are the business's registered contacts; owner_contact is the number on the CR's
   latest GET LICENSE filing, usually the owner's personal phone. Label them separately.
 - owner_contact: null means the CR never filed one (typical of old, low-numbered CRs), not an error.
-- status defaults to ACTIVE; pass status "" to include all statuses.`;
+- status defaults to ACTIVE; pass status "" to include all statuses.
+
+Limits: this server caps its registry traffic. If a tool says the registry is refusing requests
+(temporary block) or the budget is exhausted, or a result has stopped_early, stop calling and tell
+the user when to retry. Never retry in a loop: that is what triggers registry blocks.`;
 
 /** A fresh MCP server exposing the Sijilat tools, backed by `client`. */
 export function createMcpServer(client: SijilatClient): McpServer {
@@ -177,21 +181,31 @@ export function createMcpServer(client: SijilatClient): McpServer {
       if (!hasFilter(args)) return fail("Provide at least one filter (name, name_ar, activity, municipality, block, company_type, cr_number).");
       try {
         const { results, total } = await client.search(toFilters(args), { page: args.page, perPage: args.limit });
+        // The first block/budget error stops the page: the remaining businesses
+        // are skipped rather than fired at a registry that is refusing us.
+        let stopped: Error | undefined;
         const enriched = await mapLimit(results, ENRICH_CONCURRENCY, async (c) => {
+          if (stopped) return null;
           try {
             return await getContacts(client, c.cr_number, c.branch || "1", args.include_owner_phone);
           } catch (e) {
+            if (isUpstreamStop(e)) {
+              stopped = e;
+              return null;
+            }
             return { cr_number: c.cr_number, branch: c.branch, name_en: c.name_en, name_ar: c.name_ar, status: c.status, error: errMsg(e) };
           }
         });
-        const rows = args.only_with_phone
-          ? enriched.filter((r) => !("error" in r) && hasAnyPhone(r))
-          : enriched;
+        const done = enriched.filter((r) => r !== null);
+        const rows = args.only_with_phone ? done.filter((r) => !("error" in r) && hasAnyPhone(r)) : done;
         return json({
           total_matches: total,
           page: args.page,
           has_more: args.page * args.limit < total,
           returned: rows.length,
+          ...(stopped && {
+            stopped_early: `${results.length - done.length} of ${results.length} businesses on this page were skipped: ${stopped.message}`,
+          }),
           results: rows,
         });
       } catch (e) {

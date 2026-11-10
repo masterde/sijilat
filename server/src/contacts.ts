@@ -2,7 +2,7 @@
 // commercial-address contacts from CompleteCRDetails plus the owner contact
 // from the latest GET LICENSE application, with phones normalised to E.164.
 
-import type { SijilatClient } from "./sijilat.js";
+import { isUpstreamStop, type SijilatClient } from "./sijilat.js";
 import { parseDetail } from "./detail.js";
 
 export interface Contacts {
@@ -63,8 +63,15 @@ export async function getContacts(
 ): Promise<Contacts> {
   const [raw, owner] = await Promise.all([
     client.detail(crNumber, branch),
-    // A failed owner lookup shouldn't sink the whole record.
-    withOwner ? getOwnerContact(client, crNumber, branch).catch(() => undefined) : Promise.resolve(undefined),
+    // A failed owner lookup shouldn't sink the whole record, except when the
+    // registry is refusing us: then the row must fail loudly, not pass as an
+    // old CR with no owner on file.
+    withOwner
+      ? getOwnerContact(client, crNumber, branch).catch((e) => {
+          if (isUpstreamStop(e)) throw e;
+          return undefined;
+        })
+      : Promise.resolve(undefined),
   ]);
   const d = parseDetail(raw);
   // Unknown CRs come back as an empty-but-successful payload.
