@@ -4,7 +4,10 @@
 #   curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/mcp-v0.1.0/server/mcp/install.sh | bash
 #     -> registers the hosted server (https://sijilat-api.vercel.app/mcp) + installs the skill.
 #        The hosted server needs an API key: set SIJILAT_API_KEY in the environment
-#        first, or you'll be prompted for it (input hidden; never pass it as an argument).
+#        first, or you'll be prompted for it (input hidden). Don't pass it to this
+#        script as an argument. Note: `claude mcp add --header` has no stdin form, so
+#        the key is in that one command's argv while it runs (visible to local `ps`)
+#        and is then stored in plaintext in ~/.claude.json, as with any MCP header.
 #
 #   ... | bash -s -- --local       run it locally instead: download the self-contained
 #                                  stdio bundle (needs Node 20+) and register that
