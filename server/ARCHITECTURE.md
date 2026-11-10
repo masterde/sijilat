@@ -21,7 +21,8 @@ reproduces that backend's auth + encryption and exposes clean REST endpoints.
 - **Runtime:** Node (`src/server.ts`) or Vercel (zero-config Hono preset; the
   default export in `src/app.ts` is the function entry).
 - **Deployed:** `https://sijilat-api.vercel.app` (Vercel project `sijilat-api`,
-  scope `bakers-projects-054fcfc5`). Currently **open** (no API key set).
+  scope `bakers-projects-054fcfc5`). Requires `SIJILAT_API_KEY` in production;
+  without it the deployment fails closed (503 on data endpoints).
 - **Branch:** `feat/nodejs-api`. The Go CLI lives at the repo root on `main`.
 
 ---
@@ -213,10 +214,17 @@ mcp/
   not retry. All env-tunable; state is per process (per Vercel instance).
 - **`/health` calls the registry for real** (`client.ping()`, 1-row search,
   30 s cache). Cached `lookups()` can't detect a block.
-- **API key (optional):** when `SIJILAT_API_KEY` is set, an `x-api-key` **header**
-  is required (constant-time compare via `timingSafeEqual`; never a query param,
-  so it can't leak into logs/URLs). `/`, `/health`, `/docs`, `/openapi.json` stay
-  open. Currently unset in production (the API is open by choice).
+- **API key (required in production):** when `SIJILAT_API_KEY` is set, an
+  `x-api-key` **header** is required (constant-time compare via `timingSafeEqual`;
+  never a query param, so it can't leak into logs/URLs). `/`, `/health`, `/docs`,
+  `/openapi.json` stay open. When it is unset, local dev runs open but production
+  (`VERCEL` or `NODE_ENV=production`) fails closed: 503 for everything except
+  `/` and `/health`.
+- **`/mcp` is POST-only:** GET and DELETE return 405 (stateless server, no SSE
+  stream). A 200 there made clients reconnect in a loop (~250k requests/day).
+- **Installer is pinned:** `mcp/install.sh` defaults to the `PINNED_REF` tag and
+  verifies the bundle and skill against embedded SHA-256 hashes; any other ref
+  must supply its own hashes. `scripts/bundle-mcp.mjs` prints the new values.
 
 ### Security invariants (must hold)
 

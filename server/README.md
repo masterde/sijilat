@@ -92,9 +92,11 @@ npm run dev          # http://localhost:3000 (auto-reload)
 ## Auth (optional)
 
 Set `SIJILAT_API_KEY` to require an `x-api-key` **header** on all endpoints
-except `/` and `/health` (the key is header-only — never a query parameter — so
-it can't leak into logs or URLs; comparison is constant-time). Leave it unset to
-run open. See `.env.example`.
+except `/`, `/health`, `/docs` and `/openapi.json` (the key is header-only —
+never a query parameter — so it can't leak into logs or URLs; comparison is
+constant-time). Leave it unset only for local dev: in production (on Vercel, or
+with `NODE_ENV=production`) a missing key **fails closed** and every data
+endpoint, `/mcp` included, returns 503. See `.env.example`.
 
 ```bash
 SIJILAT_API_KEY=$(openssl rand -hex 24) npm start
@@ -141,8 +143,12 @@ CPR and passport numbers are never returned.
 **Claude Code: one line, hosted server + skill.**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/HEAD/server/mcp/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/mcp-v0.1.0/server/mcp/install.sh | bash
 ```
+
+It asks for the API key (input hidden) unless `SIJILAT_API_KEY` is already
+set in your environment. The installer is pinned to a release tag and checks
+every download against SHA-256 hashes embedded in the script.
 
 This registers the hosted server (`https://sijilat-api.vercel.app/mcp`, user
 scope) and installs the **`sijilat` skill** to `~/.claude/skills/sijilat/`. The
@@ -153,7 +159,8 @@ bulk exporter. Re-run the command to update. Flags: `--no-skill`, `--no-claude`.
 To add just the server without the skill:
 
 ```bash
-claude mcp add --transport http sijilat https://sijilat-api.vercel.app/mcp
+claude mcp add --transport http sijilat https://sijilat-api.vercel.app/mcp \
+  --header "x-api-key: $SIJILAT_API_KEY"
 ```
 
 The server also sends a short version of that guidance as MCP `instructions`
@@ -161,11 +168,9 @@ when a client connects, so agents get the basics even without the skill.
 
 **Claude Desktop / claude.ai.** Add a custom connector with the URL
 `https://sijilat-api.vercel.app/mcp`. Other clients: a Streamable HTTP server
-at the same URL.
+at the same URL (POST only; GET and DELETE return 405).
 
-The endpoint is **open** (like the rest of the API). To lock it down, set
-`SIJILAT_API_KEY` on Vercel; clients then send the key as a header:
-`claude mcp add ... --header "x-api-key: <key>"`.
+The hosted endpoint requires the key, sent as an `x-api-key` header.
 
 **Local (stdio), for offline or self-hosted use.** Needs Node 20+. Add
 `--local` to the one-liner: it downloads one self-contained file to
@@ -174,19 +179,19 @@ The endpoint is **open** (like the rest of the API). To lock it down, set
 (a backup is made first).
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/HEAD/server/mcp/install.sh | bash -s -- --local
+curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/mcp-v0.1.0/server/mcp/install.sh | bash -s -- --local
 ```
 
 For Claude Desktop you can also download
-[`mcp/sijilat.mcpb`](https://github.com/masterde/sijilat/raw/HEAD/server/mcp/sijilat.mcpb)
+[`mcp/sijilat.mcpb`](https://github.com/masterde/sijilat/raw/mcp-v0.1.0/server/mcp/sijilat.mcpb)
 and double-click it. Desktop runs it with its built-in Node.
 
 **Any other MCP client (local).** Configure a stdio server with command `node` and
 argument `<path>/sijilat-mcp.mjs`. The file has no dependencies, so you can
 copy it anywhere.
 
-There's nothing to configure: the registry uses public auth, so no API key is
-needed.
+The local server needs no API key: it talks to the registry directly, which
+uses public auth.
 
 ### Upstream limits (protecting the registry, and this server's IP)
 

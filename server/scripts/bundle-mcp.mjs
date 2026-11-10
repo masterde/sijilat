@@ -44,3 +44,11 @@ try {
 } finally {
   rmSync(stage, { recursive: true, force: true });
 }
+
+// Hashes for mcp/install.sh (PINNED_BUNDLE_SHA256 / PINNED_SKILL_SHA256). Paste
+// them in, commit, then tag that commit as PINNED_REF (mcp-v<version>).
+const { createHash } = await import("node:crypto");
+const sha = (p) => createHash("sha256").update(readFileSync(p)).digest("hex");
+console.error(`PINNED_REF=mcp-v${version}`);
+console.error(`PINNED_BUNDLE_SHA256=${sha("mcp/sijilat-mcp.mjs")}`);
+console.error(`PINNED_SKILL_SHA256=${sha("mcp/skill/sijilat/SKILL.md")}`);

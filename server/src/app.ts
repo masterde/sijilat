@@ -37,13 +37,36 @@ export const app = new Hono();
 app.use("*", logger());
 app.use("*", cors());
 
-// Optional API key: when SIJILAT_API_KEY is set, require a matching x-api-key
-// HEADER. When unset, the API is open (fine for local/private use). The key is
-// only accepted as a header — never a query parameter — so it does not leak
-// into access logs, the request URL, or referrers.
+// The MCP endpoint is stateless with JSON responses, so it has no standalone
+// SSE stream to offer. Per the Streamable HTTP spec a GET (open stream) or
+// DELETE (end session) must get 405, which tells clients to stop. Answering
+// GET with a 200 that closes at once made every connected Claude Code session
+// reconnect in a tight loop (~250k requests/day). Runs before the key check so
+// these probes stay cheap whether or not the caller has a key.
+app.on(["GET", "DELETE"], "/mcp", (c) => {
+  c.header("Allow", "POST");
+  return c.json({ error: "method_not_allowed", message: "use POST for MCP requests" }, 405);
+});
+
+// Production = running on Vercel, or NODE_ENV=production (Docker/Node).
+const isProduction = Boolean(process.env.VERCEL) || process.env.NODE_ENV === "production";
+
+// API key. When SIJILAT_API_KEY is set, require a matching x-api-key HEADER.
+// When it is unset: local dev stays open, but production FAILS CLOSED (503 for
+// everything except "/" and "/health"), so a missing env var can never expose
+// the registry data. The key is only accepted as a header — never a query
+// parameter — so it does not leak into access logs, the request URL, or
+// referrers.
 app.use("*", async (c, next) => {
   const required = process.env.SIJILAT_API_KEY;
-  if (!required) return next();
+  if (!required) {
+    if (!isProduction) return next();
+    if (c.req.path === "/" || c.req.path === "/health") return next();
+    return c.json(
+      { error: "misconfigured", message: "SIJILAT_API_KEY is not set on this deployment" },
+      503,
+    );
+  }
   // Discovery/docs endpoints stay public even when a key is set.
   const open = new Set(["/", "/health", "/docs", "/openapi.json"]);
   if (open.has(c.req.path)) return next();
@@ -69,7 +92,11 @@ app.get("/", (c) =>
       "GET /lookups/:table": "one table: status|type|nationality|sector|municipality",
       "POST /mcp": "MCP server (Streamable HTTP): business search + phone numbers",
     },
-    auth: process.env.SIJILAT_API_KEY ? "x-api-key required (header)" : "open",
+    auth: process.env.SIJILAT_API_KEY
+      ? "x-api-key required (header)"
+      : isProduction
+        ? "misconfigured: SIJILAT_API_KEY unset, API disabled"
+        : "open (local dev)",
   }),
 );
 
@@ -289,8 +316,8 @@ app.get("/openapi.json", async (c) => {
 // MCP over Streamable HTTP, stateless: a fresh server + transport per request
 // (serverless instances share nothing), JSON responses instead of SSE. Shares
 // the process-wide client, so token + lookup caches stay warm. Covered by the
-// x-api-key middleware above when SIJILAT_API_KEY is set.
-app.all("/mcp", async (c) => {
+// x-api-key middleware above. GET/DELETE are answered with 405 further up.
+app.post("/mcp", async (c) => {
   const transport = new WebStandardStreamableHTTPServerTransport({
     sessionIdGenerator: undefined,
     enableJsonResponse: true,
