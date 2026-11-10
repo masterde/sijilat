@@ -143,12 +143,15 @@ CPR and passport numbers are never returned.
 **Claude Code: one line, hosted server + skill.**
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/mcp-v0.1.0/server/mcp/install.sh | bash
+curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/203d3f4c280a3aaba0d653efc3a646c4147dbc1d/server/mcp/install.sh | bash
 ```
 
 It asks for the API key (input hidden) unless `SIJILAT_API_KEY` is already
-set in your environment. The installer is pinned to a release tag and checks
-every download against SHA-256 hashes embedded in the script.
+set in your environment. The URL above is the full commit SHA of release
+`mcp-v0.1.0`: unlike a tag or branch, a commit SHA can't be repointed, so the
+script you run is exactly the reviewed one. The installer then checks every
+download against SHA-256 hashes embedded in it. On a new release, update these
+URLs to the new release commit's SHA.
 
 This registers the hosted server (`https://sijilat-api.vercel.app/mcp`, user
 scope) and installs the **`sijilat` skill** to `~/.claude/skills/sijilat/`. The
@@ -179,11 +182,11 @@ The hosted endpoint requires the key, sent as an `x-api-key` header.
 (a backup is made first).
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/mcp-v0.1.0/server/mcp/install.sh | bash -s -- --local
+curl -fsSL https://raw.githubusercontent.com/masterde/sijilat/203d3f4c280a3aaba0d653efc3a646c4147dbc1d/server/mcp/install.sh | bash -s -- --local
 ```
 
 For Claude Desktop you can also download
-[`mcp/sijilat.mcpb`](https://github.com/masterde/sijilat/raw/mcp-v0.1.0/server/mcp/sijilat.mcpb)
+[`mcp/sijilat.mcpb`](https://github.com/masterde/sijilat/raw/203d3f4c280a3aaba0d653efc3a646c4147dbc1d/server/mcp/sijilat.mcpb)
 and double-click it. Desktop runs it with its built-in Node.
 
 **Any other MCP client (local).** Configure a stdio server with command `node` and
